@@ -1,0 +1,41 @@
+[tool.kedro]
+package_name = "eyft"
+project_name = "eyft"
+kedro_init_version = "0.18.6"
+
+[tool.poetry]
+name = "eyft"
+version = "0.1.0"
+description = ""
+authors = ["krystofmincev <krystof.mincev@be.ey.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.11"
+kedro = "^0.18.6"
+scikit-learn = "^1.2.2"
+pandas = "^1.5.3"
+seaborn = "^0.12.2"
+matplotlib = "^3.7.1"
+plotly = "^5.13.1"
+openpyxl = "^3.1.2"
+geopandas = "^0.12.2"
+
+[tool.poetry.dev-dependencies]
+jupyter = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+addopts = """
+--cov-report term-missing \
+--cov src/eyft -ra"""
+
+[tool.coverage.report]
+fail_under = 0
+show_missing = true
+exclude_lines = ["pragma: no cover", "raise NotImplementedError"]

@@ -1,0 +1,7 @@
+complete_features_train:
+  type: pandas.ExcelDataSet
+  filepath: data/03_feature_engineering/complete_features_train.xlsx
+
+complete_features_test:
+  type: pandas.ExcelDataSet
+  filepath: data/03_feature_engineering/complete_features_test.xlsx

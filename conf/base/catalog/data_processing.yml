@@ -1,0 +1,27 @@
+# TODO: Remember to preprocess test data
+
+# Train --------------------------------
+raw_train:
+  type: pandas.ExcelDataSet
+  filepath: data/01_raw/train/ds_flanders.xlsx
+
+preprocessed_train:
+  type: pandas.ExcelDataSet
+  filepath: data/02_data_processing/ds_flanders.xlsx
+
+processed_train:
+  type: pandas.ExcelDataSet
+  filepath: data/02_data_processing/processed_train.xlsx
+
+# Test ----------------------------------
+raw_test:
+  type: pandas.ExcelDataSet
+  filepath: data/01_raw/test/ds_flanders.xlsx
+
+preprocessed_test:
+  type: pandas.ExcelDataSet
+  filepath: data/02_data_processing/ds_flanders.xlsx
+
+processed_test:
+  type: pandas.ExcelDataSet
+  filepath: data/02_data_processing/processed_test.xlsx

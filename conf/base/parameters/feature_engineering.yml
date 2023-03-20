@@ -1,0 +1,8 @@
+# TODO: Use space when specifying what to divide or multiply by
+
+feature_engineering:
+  cols:
+    Price: ['Log', 'Divide_by Bedrooms']
+
+  transformed_cols:  # Check default prefixes added to cols to know new names.
+    Log_Price: ['Multiply_by Facades']
