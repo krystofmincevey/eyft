@@ -30,8 +30,10 @@ def mean_impute(
     if mean is None:
         mean = df[col].mean()
         logger.info(f'Mean of {col} is {mean}.')
-    raise NotImplementedError
-    # return {"df": df, "col": col, "mean": mean}
+
+    df[col] = df[col].fillna(mean)
+    return {"df": df, "col": col, "mean": mean}
+
 
 
 def mode_impute(
@@ -42,8 +44,10 @@ def mode_impute(
     if mode is None:
         mode = df[col].mode()
         logger.info(f'Mode of {col} is {mode}.')
-    raise NotImplementedError
-    # return {"df": df, "col": col, "mode": mode}
+
+    df[col] = df[col].fillna(mode)
+    return {"df": df, "col": col, "mode": mode}
+
 
 
 def z_normalise(
@@ -55,9 +59,9 @@ def z_normalise(
     if mean is None or stdev is None:
         stdev, mean = df[col].std(), df[col].mean()
         logger.info(f'Mean of {col} is {mean} and StDev is {stdev}.')
-    raise NotImplementedError
-    # return {"df": df, "col": col, "mean": mean, "stdev": stdev}
 
+    df[col] = df[col].fillna((df[col] - df[col].mean()) / df[col].stdev())
+    return {"df": df, "col": col, "mean": mean, "stdev": stdev}
 
 def min_max_scale(
     df: pd.DataFrame,
@@ -70,8 +74,12 @@ def min_max_scale(
         logger.info(
             f'Min of {col} is {min_val} and Max is {max_val}.'
         )
-    raise NotImplementedError
-    # return {"df": df, "col": col, "min_val": min_val, "max_val": max_val}
+
+    df[col] = df[col].fillna((df[col] - df[col].min()) / (df[col].max() - df[col].min()))
+    return {"df": df, "col": col, "min_val": min_val, "max_val": max_val}
+
+
+
 
 
 def cap_3std(
@@ -85,6 +93,8 @@ def cap_3std(
     raise NotImplementedError
     # return {"df": df, "col": col, "stdev": stdev}
 
+    df[col] = df[col].mean() - 3 * df[col].std(), df[col].mean() + 3 * df[col].std()
+    return {"df": df, "col": col, "stdev": stdev}
 
 def categorize(
     df: pd.DataFrame,
