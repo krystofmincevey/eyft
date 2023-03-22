@@ -121,4 +121,3 @@ To automatically strip out all output cell contents before committing to `git`, 
 
 [Further information about building project documentation and packaging your project](https://kedro.readthedocs.io/en/stable/tutorial/package_a_project.html)
 
-# new commit and push 
