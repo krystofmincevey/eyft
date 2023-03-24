@@ -109,24 +109,66 @@ def cap_3std(
     df[col] = np.where(df[col] > mean + 3 * stdev, mean + 3 * stdev, df[col])
     return {"df": df, "col": col, "stdev": stdev}
 
-def x_percentile(
+def cap_perc(
     df: pd.DataFrame,
     col: str,
     cap_perc: Union[float] = None,
-    floor_perc: Union[float] = None,
-) -> Dict[str, Union[pd.DataFrame, str, int, float]] :
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
     if cap_perc is None:
-        cap_perc = df[col].quantile(0.99)
+        cap_perc_value = df[col].quantile(0.99)
         logger.info(f'cap of {col} is {cap_perc}.')
-    else
+    elif cap_perc <= 0 or cap_perc >= 1:
+        raise "You need to insert a number between 0 and 1"
+    else:
+        cap_perc_value = df[col].quantile(cap_perc)
+    df[col] = np.where(df[col] > cap_perc_value, cap_perc_value, df[col])
+    return{"df": df, "col": col, "cap_perc": cap_perc, "cap_perc_value": cap_perc_value}
+
+
+
+
+def floor_perc(
+    df: pd.DataFrame,
+    col: str,
+    floor_perc: Union[float] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
     if floor_perc is None:
-        floor_perc = df[col].quantile(0.01)
+        floor_perc_value = df[col].quantile(0.01)
         logger.info(f'floor of {col} is {floor_perc}.')
+    elif floor_perc <= 0 or floor_perc >= 1:
+        raise "You need to insert a number between 0 and 1"
+    else:
+        floor_perc_value = df[col].quantile(floor_perc)
+    df[col] = np.where(df[col] < floor_perc_value, floor_perc_value, df[col])
+    return{"df": df, "col": col, "floor_perc": floor_perc, "floor_perc_value": floor_perc_value}
 
-    df[col] = np.where(df[col] < floor_perc, floor_perc, df[col])
-    df[col] = np.where(df[col] > cap_perc, cap_perc, df[col])
-    return{"df": df, "col": col, "cap_perc": cap_perc, "floor_perc": floor_perc}
 
+def median_impute(
+    df: pd.DataFrame,
+    col: str,
+    median: Union[int, float] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    if median is None:
+        median = df[col].median()
+        logger.info(f'Median of {col} is {median}.')
+
+    df[col] = df[col].fillna(median)
+    return {"df": df, "col": col, "median": median}
+
+def dummy_var(
+    df: pd.DataFrame,
+    col: str,
+    na_flag: Union[bool] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    if na_flag is None:
+        na_flag = True
+    df = pd.get_dummies(df[col], dummy_na= na_flag)
+    return{"df": df, "col": col, "na_flag": na_flag}
+
+
+
+
+# This one is not finished
 def desc_statistics(
     df: pd.DataFrame,
     col: str,
