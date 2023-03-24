@@ -1,5 +1,7 @@
 import pandas as pd
+import numpy as np
 import geopandas
+import matplotlib.pyplot as plt
 
 from typing import (
     Union, Tuple, Any, Dict, List, Callable
@@ -56,11 +58,15 @@ def z_normalise(
     mean: Union[int, float] = None,
     stdev: Union[int, float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-    if mean is None or stdev is None:
-        stdev, mean = df[col].std(), df[col].mean()
-        logger.info(f'Mean of {col} is {mean} and StDev is {stdev}.')
-
-    df[col] = df[col].fillna((df[col] - df[col].mean()) / df[col].stdev())
+    if mean is None:
+        mean = df[col].mean()
+        logger.info(f'Mean of {col} is {mean}.')
+    if stdev is None:
+        stdev = df[col].std()
+        logger.info(f'StDev of {col} is {stdev}.')
+    df[col] = (df[col] - mean) / stdev
+    # What to do with the imputed values?
+    # df[col] = df[col].fillna()
     return {"df": df, "col": col, "mean": mean, "stdev": stdev}
 
 def min_max_scale(
@@ -69,13 +75,16 @@ def min_max_scale(
     min_val: Union[int, float] = None,
     max_val: Union[int, float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-    if min_val is None or max_val is None:
-        min_val, max_val = df[col].min(), df[col].max()
-        logger.info(
-            f'Min of {col} is {min_val} and Max is {max_val}.'
-        )
+    if min_val is None:
+        min_val = df[col].min()
+        logger.info(f'Min of {col} is {min_val}.')
+    if max_val is None:
+        max_val = df[col].max()
+        logger.info(f'min of {col} is {max_val}.')
 
-    df[col] = df[col].fillna((df[col] - df[col].min()) / (df[col].max() - df[col].min()))
+    df[col] = (df[col] - min_val) / (max_val - min_val)
+    # What to do with imputed values?
+    # ....
     return {"df": df, "col": col, "min_val": min_val, "max_val": max_val}
 
 
@@ -85,28 +94,77 @@ def min_max_scale(
 def cap_3std(
     df: pd.DataFrame,
     col: str,
+    mean: Union[int, float] = None,
     stdev: Union[int, float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    if mean is None:
+        mean = df[col].mean()
+        logger.info(f'mean of {col} is {mean}.')
     if stdev is None:
         stdev = df[col].std()
         logger.info(f'StDev of {col} is {stdev}.')
-    raise NotImplementedError
+    # raise NotImplementedError
     # return {"df": df, "col": col, "stdev": stdev}
-
-    df[col] = df[col].mean() - 3 * df[col].std(), df[col].mean() + 3 * df[col].std()
+    df[col] = np.where(df[col] < mean - 3 * stdev, mean - 3 * stdev, df[col])
+    df[col] = np.where(df[col] > mean + 3 * stdev, mean + 3 * stdev, df[col])
     return {"df": df, "col": col, "stdev": stdev}
 
+def x_percentile(
+    df: pd.DataFrame,
+    col: str,
+    cap_perc: Union[int, float] = None,
+    floor_perc: Union[int, float] = None,
+) ->  Dict[str, Union[pd.DataFrame, str, int, float]] :
+    if cap_perc is None:
+        cap_perc = df[col].quantile()
+        logger.info(f'cap of {col} is {cap_perc}.')
+
+    if floor_perc is None:
+        floor_perc = df[col].quantile()
+        logger.info(f'floor of {col} is {floor_perc}.')
+
+    df[col] = np.where(df[col] < floor_perc, floor_perc, df[col])
+    df[col] = np.where(df[col] > cap_perc, cap_perc, df[col])
+    return{"df": df, "col": col, "cap_perc": cap_perc, "floor_perc": floor_perc}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+######################################################################
 def categorize(
     df: pd.DataFrame,
     col: str,
+    bins: int = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+
+    df['new'] = pd.cut(df[col], bins="blocks")
     return NotImplementedError
+# How to optimize choice bins --> use astroPy
 
 
 def geolocate(
     df: geopandas.GeoDataFrame,
     col: Union[str, Tuple[str]],
 ) -> Dict[str, Union[geopandas.GeoDataFrame, str, int, float]]:
+
+
     raise NotImplementedError
 # -------------------------------------
 
