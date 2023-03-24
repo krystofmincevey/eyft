@@ -112,21 +112,28 @@ def cap_3std(
 def x_percentile(
     df: pd.DataFrame,
     col: str,
-    cap_perc: Union[int, float] = None,
-    floor_perc: Union[int, float] = None,
-) ->  Dict[str, Union[pd.DataFrame, str, int, float]] :
+    cap_perc: Union[float] = None,
+    floor_perc: Union[float] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]] :
     if cap_perc is None:
-        cap_perc = df[col].quantile()
+        cap_perc = df[col].quantile(0.99)
         logger.info(f'cap of {col} is {cap_perc}.')
-
+    else
     if floor_perc is None:
-        floor_perc = df[col].quantile()
+        floor_perc = df[col].quantile(0.01)
         logger.info(f'floor of {col} is {floor_perc}.')
 
     df[col] = np.where(df[col] < floor_perc, floor_perc, df[col])
     df[col] = np.where(df[col] > cap_perc, cap_perc, df[col])
     return{"df": df, "col": col, "cap_perc": cap_perc, "floor_perc": floor_perc}
 
+def desc_statistics(
+    df: pd.DataFrame,
+    col: str,
+    stat: Union[int, float] = None,
+) -> Dict[]
+
+    df[col] = df[col].describe
 
 
 
@@ -156,7 +163,7 @@ def categorize(
 
     df['new'] = pd.cut(df[col], bins="blocks")
     return NotImplementedError
-# How to optimize choice bins --> use astroPy
+# How to optimize choice bins --> use astroPy?
 
 
 def geolocate(
