@@ -1,5 +1,7 @@
 import pandas as pd
+import numpy as np
 import geopandas
+import matplotlib.pyplot as plt
 
 from typing import (
     Union, Tuple, Any, Dict, List, Callable
@@ -30,8 +32,10 @@ def mean_impute(
     if mean is None:
         mean = df[col].mean()
         logger.info(f'Mean of {col} is {mean}.')
-    raise NotImplementedError
-    # return {"df": df, "col": col, "mean": mean}
+
+    df[col] = df[col].fillna(mean)
+    return {"df": df, "col": col, "mean": mean}
+
 
 
 def mode_impute(
@@ -42,8 +46,10 @@ def mode_impute(
     if mode is None:
         mode = df[col].mode()
         logger.info(f'Mode of {col} is {mode}.')
-    raise NotImplementedError
-    # return {"df": df, "col": col, "mode": mode}
+
+    df[col] = df[col].fillna(mode)
+    return {"df": df, "col": col, "mode": mode}
+
 
 
 def z_normalise(
@@ -52,12 +58,16 @@ def z_normalise(
     mean: Union[int, float] = None,
     stdev: Union[int, float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-    if mean is None or stdev is None:
-        stdev, mean = df[col].std(), df[col].mean()
-        logger.info(f'Mean of {col} is {mean} and StDev is {stdev}.')
-    raise NotImplementedError
-    # return {"df": df, "col": col, "mean": mean, "stdev": stdev}
-
+    if mean is None:
+        mean = df[col].mean()
+        logger.info(f'Mean of {col} is {mean}.')
+    if stdev is None:
+        stdev = df[col].std()
+        logger.info(f'StDev of {col} is {stdev}.')
+    df[col] = (df[col] - mean) / stdev
+    # What to do with the imputed values?
+    # df[col] = df[col].fillna()
+    return {"df": df, "col": col, "mean": mean, "stdev": stdev}
 
 def min_max_scale(
     df: pd.DataFrame,
@@ -65,38 +75,145 @@ def min_max_scale(
     min_val: Union[int, float] = None,
     max_val: Union[int, float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-    if min_val is None or max_val is None:
-        min_val, max_val = df[col].min(), df[col].max()
-        logger.info(
-            f'Min of {col} is {min_val} and Max is {max_val}.'
-        )
-    raise NotImplementedError
-    # return {"df": df, "col": col, "min_val": min_val, "max_val": max_val}
+    if min_val is None:
+        min_val = df[col].min()
+        logger.info(f'Min of {col} is {min_val}.')
+    if max_val is None:
+        max_val = df[col].max()
+        logger.info(f'min of {col} is {max_val}.')
+
+    df[col] = (df[col] - min_val) / (max_val - min_val)
+    # What to do with imputed values?
+    # ....
+    return {"df": df, "col": col, "min_val": min_val, "max_val": max_val}
+
+
+
 
 
 def cap_3std(
     df: pd.DataFrame,
     col: str,
+    mean: Union[int, float] = None,
     stdev: Union[int, float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    if mean is None:
+        mean = df[col].mean()
+        logger.info(f'mean of {col} is {mean}.')
     if stdev is None:
         stdev = df[col].std()
         logger.info(f'StDev of {col} is {stdev}.')
-    raise NotImplementedError
+    # raise NotImplementedError
     # return {"df": df, "col": col, "stdev": stdev}
+    df[col] = np.where(df[col] < mean - 3 * stdev, mean - 3 * stdev, df[col])
+    df[col] = np.where(df[col] > mean + 3 * stdev, mean + 3 * stdev, df[col])
+    return {"df": df, "col": col, "stdev": stdev}
+
+def cap_perc(
+    df: pd.DataFrame,
+    col: str,
+    cap_perc: Union[float] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    if cap_perc is None:
+        cap_perc_value = df[col].quantile(0.99)
+        logger.info(f'cap of {col} is {cap_perc}.')
+    elif cap_perc <= 0 or cap_perc >= 1:
+        raise "You need to insert a number between 0 and 1"
+    else:
+        cap_perc_value = df[col].quantile(cap_perc)
+    df[col] = np.where(df[col] > cap_perc_value, cap_perc_value, df[col])
+    return{"df": df, "col": col, "cap_perc": cap_perc, "cap_perc_value": cap_perc_value}
 
 
+
+
+def floor_perc(
+    df: pd.DataFrame,
+    col: str,
+    floor_perc: Union[float] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    if floor_perc is None:
+        floor_perc_value = df[col].quantile(0.01)
+        logger.info(f'floor of {col} is {floor_perc}.')
+    elif floor_perc <= 0 or floor_perc >= 1:
+        raise "You need to insert a number between 0 and 1"
+    else:
+        floor_perc_value = df[col].quantile(floor_perc)
+    df[col] = np.where(df[col] < floor_perc_value, floor_perc_value, df[col])
+    return{"df": df, "col": col, "floor_perc": floor_perc, "floor_perc_value": floor_perc_value}
+
+
+def median_impute(
+    df: pd.DataFrame,
+    col: str,
+    median: Union[int, float] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    if median is None:
+        median = df[col].median()
+        logger.info(f'Median of {col} is {median}.')
+
+    df[col] = df[col].fillna(median)
+    return {"df": df, "col": col, "median": median}
+
+def dummy_var(
+    df: pd.DataFrame,
+    col: str,
+    na_flag: Union[bool] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    if na_flag is None:
+        na_flag = True
+    df = pd.get_dummies(df[col], dummy_na= na_flag)
+    return{"df": df, "col": col, "na_flag": na_flag}
+
+
+
+
+# This one is not finished
+def desc_statistics(
+    df: pd.DataFrame,
+    col: str,
+    stat: Union[int, float] = None,
+) -> Dict[]
+
+    df[col] = df[col].describe
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+######################################################################
 def categorize(
     df: pd.DataFrame,
     col: str,
+    bins: int = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+
+    df['new'] = pd.cut(df[col], bins="blocks")
     return NotImplementedError
+# How to optimize choice bins --> use astroPy?
 
 
 def geolocate(
     df: geopandas.GeoDataFrame,
     col: Union[str, Tuple[str]],
 ) -> Dict[str, Union[geopandas.GeoDataFrame, str, int, float]]:
+
+
     raise NotImplementedError
 # -------------------------------------
 
