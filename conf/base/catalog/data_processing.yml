@@ -7,21 +7,22 @@ raw_train:
 
 preprocessed_train:
   type: pandas.ExcelDataSet
-  filepath: data/02_data_processing/ds_flanders.xlsx
+  filepath: data/02_data_processing/train/ds_flanders.xlsx
 
 processed_train:
   type: pandas.ExcelDataSet
-  filepath: data/02_data_processing/processed_train.xlsx
+  filepath: data/02_data_processing/train/processed_train.xlsx
 
 # Test ----------------------------------
+# MAY NOT BE INCLUDED SEPARATELY FROM TRAIN.
 raw_test:
   type: pandas.ExcelDataSet
   filepath: data/01_raw/test/ds_flanders.xlsx
 
 preprocessed_test:
   type: pandas.ExcelDataSet
-  filepath: data/02_data_processing/ds_flanders.xlsx
+  filepath: data/02_data_processing/test/ds_flanders.xlsx
 
 processed_test:
   type: pandas.ExcelDataSet
-  filepath: data/02_data_processing/processed_test.xlsx
+  filepath: data/02_data_processing/test/processed_test.xlsx

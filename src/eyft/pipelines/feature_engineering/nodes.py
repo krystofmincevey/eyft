@@ -2,7 +2,7 @@ import pandas as pd
 
 from typing import Dict, List
 
-from transform import Transform
+from .transform import Transform
 
 
 def transform(

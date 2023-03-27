@@ -3,6 +3,6 @@ none: None
 data_processing:
   cols:
     Price: ['Z_Normalise', 'Mean_Impute']
-    Bedrooms: ['Cap_3stdev', 'Mode_Impute']
+    Bedrooms: ['Cap_3std', 'Mode_Impute']
     Facades: ['Mode_Impute']
     EPC: ['Pass']

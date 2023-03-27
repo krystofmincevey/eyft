@@ -2,7 +2,15 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from src.eyft import logger
+
+# TODO: This one is not finished
+# def desc_statistics(
+#     df: pd.DataFrame,
+#     col: str,
+#     stat: Union[int, float] = None,
+# ) -> Dict[]
+#
+#     df[col] = df[col].describe
 
 
 def explore(
@@ -31,7 +39,7 @@ def explore(
         try:
             sns.boxplot(x=x_col, y=y_col, data=df)
         except ValueError:
-            logger.info(
+            print.info(
                 f'Unable to plot X: {x_col} vs Y: {y_col}.'
             )
             pass

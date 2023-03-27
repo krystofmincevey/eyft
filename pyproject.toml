@@ -19,6 +19,8 @@ matplotlib = "^3.7.1"
 plotly = "^5.13.1"
 openpyxl = "^3.1.2"
 geopandas = "^0.12.2"
+numpy = "^1.24.2"
+pytest = "^7.2.2"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"
@@ -30,10 +32,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.isort]
 profile = "black"
 
-[tool.pytest.ini_options]
-addopts = """
---cov-report term-missing \
---cov src/eyft -ra"""
+#[tool.pytest.ini_options]
+#addopts = """
+#--cov-report term-missing \
+#--cov src/eyft -ra"""
 
 [tool.coverage.report]
 fail_under = 0

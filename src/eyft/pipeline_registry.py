@@ -20,7 +20,7 @@ def register_pipelines() -> Dict[str, Pipeline]:
     fe_pipeline = transform_inputs()
 
     return {
-        "__default__": dp_pipeline + fe_pipeline,
         "data_processing": dp_pipeline,
         "feature_engineering": fe_pipeline,
+        "__default__": dp_pipeline + fe_pipeline,
     }

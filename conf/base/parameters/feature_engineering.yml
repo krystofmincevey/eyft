@@ -5,4 +5,4 @@ feature_engineering:
     Price: ['Log', 'Divide_by Bedrooms']
 
   transformed_cols:  # Check default prefixes added to cols to know new names.
-    Log_Price: ['Multiply_by Facades']
+    log_Price: ['Multiply_by Facades']

@@ -1,10 +1,9 @@
 """
 eyft
 """
-
-import logging
+import warnings
 
 
 __version__ = "0.1"
 
-logger = logging.getLogger()
+warnings.simplefilter(action='ignore', category=FutureWarning)

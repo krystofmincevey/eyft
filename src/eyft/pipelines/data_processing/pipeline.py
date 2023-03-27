@@ -19,7 +19,7 @@ def create_pipeline(
                 func=process,
                 inputs={
                     "df_train": inputs["train"],
-                    "df_test": inputs["test"],
+                    "df_test": inputs["train"],  # TODO: change to inputs['test'] when available
                     "params": "params:data_processing.cols",
                 }, outputs=[outputs["train"], outputs["test"]],
                 name="preprocess_data_node",

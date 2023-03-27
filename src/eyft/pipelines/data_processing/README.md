@@ -20,10 +20,14 @@ preprocessing functions are supported below.
 
 - [ ] min\_max_scale
 - [ ] z_normalise
-- [ ] mode\_impute
+- [X] mode\_impute; TODO: Add a description.
 - [ ] mean\_impute
-- [ ] cap\_3std
+- [ ] median\_impute
 - [ ] categorize
+- [ ] cap
+- [ ] cap\_3std
+- [ ] floor
+- [ ] dummy_var
 - [ ] geolocate *More aspirational, as it would entail converting 
 an address to x,y geo-coordinates using geopandas*
-- ...
+- [ ] pass (i.e. do\_nothing)
