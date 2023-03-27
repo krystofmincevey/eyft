@@ -2,7 +2,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal, assert_series_equal
 
 from eyft.pipelines.data_processing.processor import (
-    mode_impute, z_normalise
+    mean_impute, mode_impute, z_normalise, min_max_scale
 )
 
 
@@ -13,6 +13,18 @@ def test_z_normalise(epc_input):
     expected = pd.Series([1, 0, 0, 0, 0, 1, -1, -1], name='Bedrooms')
     assert_series_equal(actual, expected, check_dtype=False)
 
+
+def test_min_max_scale(epc_input):
+    actual = min_max_scale(
+        epc_input, col='Bedrooms')['df']['Bedrooms']
+    expected = pd.Series([1, 1/2, 1/2, 1/2, 1/2, 1, 0, 0], name='Bedrooms')
+    assert_series_equal(actual, expected, check_dtype=False)
+
+
+def test_mean_impute(epc_input):
+    actual = mean_impute(epc_input, col='Facades', mean=2)['df']['Facades']
+    expected = pd.Series([2, 2, 4, 2, 1, 2, 2, 3], name='Facades')
+    assert_series_equal(actual, expected, check_dtype=False)
 
 class TestModeImpute(object):
 
