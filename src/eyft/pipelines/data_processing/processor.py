@@ -194,7 +194,7 @@ def categorize(
     col: str,
     bins: int = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-    df['new'] = pd.cut(df[col], bins="blocks")
+    #df['new'] = pd.cut(df[col], bins="blocks")
     raise NotImplementedError
 # How to optimize choice of bins --> use astroPy?
 
