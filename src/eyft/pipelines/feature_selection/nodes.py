@@ -1,11 +1,12 @@
 import pandas as pd
+import statsmodels.api as sm
 
 from typing import List
 
 from ..feature_engineering import logger
 
 
-# TODO: Can potentially replace cutoff
+# TODO: Can potentially (in some cases) replace cutoff
 #  with n - number of features to keep
 
 
@@ -18,6 +19,7 @@ def select(
 
 def forward_select(
     df: pd.DataFrame,
+    y_col: str,
     cutoff: float
 ) -> List[str]:
     """
@@ -32,13 +34,25 @@ def forward_select(
     have a set of selected features with a p-value of individual features
     less than the significance level.
     """
-    raise NotImplementedError
-    # logger.info(f'{col}: {p_val}')
-    # return features
+    initial_features = df.columns.tolist()
+    best_features = []
+    while len(initial_features) > 0:
+        remaining_features = list(set(initial_features) - set(best_features))
+        new_pval = pd.Series(index=remaining_features)
+        for new_column in remaining_features:
+            model = sm.OLS(y_col, sm.add_constant(df[best_features + [new_column]])).fit()
+            new_pval[new_column] = model.pvalues[new_column]
+        min_p_value = new_pval.min()
+        if min_p_value < cutoff:
+            best_features.append(new_pval.idxmin())
+        else:
+            break
+    return best_features
 
 
 def backward_eliminate(
         df: pd.DataFrame,
+        y_col: str,
         cutoff: float
 ) -> List[str]:
     """
@@ -48,14 +62,24 @@ def backward_eliminate(
     This process repeats again and again until we have the final
     set of significant features.
     """
-    raise NotImplementedError
-    # logger.info(f'{col}: {p_val}')
-    # return features
+    features = df.columns.tolist()
+    while len(features) > 0:
+        features_with_constant = sm.add_constant(df[features])
+        p_values = sm.OLS(y_col, features_with_constant).fit().pvalues[1:]
+        max_p_value = p_values.max()
+        if max_p_value >= cutoff:
+            excluded_feature = p_values.idxmax()
+            features.remove(excluded_feature)
+        else:
+            break
+    return features
 
 
 def step_wise_select(
         df: pd.DataFrame,
-        cutoff: float
+        y_col: str,
+        cutoff_in: float = 0.05,
+        cutoff_out: float = 0.05,
 ) -> List[str]:
     """
     It is similar to forward selection but the difference is
@@ -65,15 +89,30 @@ def step_wise_select(
     that particular feature through backward elimination.
 
     Hence, It is a combination of forward selection and backward elimination.
-
-    Returns list of most important features (p_val > cutoff).
-    The list is compiled by building a linear model
-    using p vals in a step-wise manner.
-
     """
-    raise NotImplementedError
-    # logger.info(f'{col}: {p_val}')
-    # return features
+    initial_features = df.columns.tolist()
+    best_features = []
+    while len(initial_features) > 0:
+        remaining_features = list(set(initial_features) - set(best_features))
+        new_pval = pd.Series(index=remaining_features)
+        for new_column in remaining_features:
+            model = sm.OLS(y_col, sm.add_constant(df[best_features + [new_column]])).fit()
+            new_pval[new_column] = model.pvalues[new_column]
+        min_p_value = new_pval.min()
+        if min_p_value < cutoff_in:
+            best_features.append(new_pval.idxmin())
+            while len(best_features) > 0:
+                best_features_with_constant = sm.add_constant(df[best_features])
+                p_values = sm.OLS(y_col, best_features_with_constant).fit().pvalues[1:]
+                max_p_value = p_values.max()
+                if max_p_value >= cutoff_out:
+                    excluded_feature = p_values.idxmax()
+                    best_features.remove(excluded_feature)
+                else:
+                    break
+        else:
+            break
+    return best_features
 
 
 def random_forrest(
