@@ -3,6 +3,7 @@ import numpy as np
 import geopandas
 import matplotlib.pyplot as plt
 
+
 from typing import (
     Union, Tuple, Any, Dict, List, Callable
 )
@@ -167,6 +168,24 @@ def dummy_var(
     df[col] = pd.get_dummies(df[col], dummy_na= na_flag)
     return{"df": df, "col": col, "na_flag": na_flag}
 
+def merge_data(
+    left: pd.DataFrame,
+    right: pd.DataFrame,
+    left_key: str,
+    right_key: str,
+    columns: list,
+    merge_type: Union[str] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+
+     columns = [right_key] + columns
+     right = right[columns]
+     left = left.merge(right, left_on = left_key, right_on = right_key, how = merge_type)
+     return{"df": left, "cols": columns}
+
+
+
+
+
 
 
 
@@ -180,26 +199,27 @@ def summ_statistics(
 
     df[col] = df[col].describe
 
+def boxplot(
+    df: pd.DataFrame,
+    col: str,
+    box: Union[str] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+
+    plt.boxplot(col = str, by = str)
+    #WHAT I TRY TO DO IS CREATING A BOXPLOT WHERE THEY CAN COMPARE F.I. RANGE IN PRICE FOR DIFFERENT LOCATIONS
+
+
+def histogram(
+    df: pd.DataFrame,
+    col: str,
+    histogram_bin_hedges: Union[str] = None,
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+
+    df[col] = np.histogram_bin_edges(df[col], bins="fd")
+    return{"df": df}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-######################################################################
 def categorize(
     df: pd.DataFrame,
     col: str,
@@ -208,7 +228,12 @@ def categorize(
 
     df['new'] = pd.cut(df[col], bins="blocks")
     return NotImplementedError
-# How to optimize choice bins --> use astroPy?
+
+
+
+
+
+
 
 
 def geolocate(

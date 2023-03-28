@@ -19,7 +19,7 @@ processing methods supported by the engine. Please specify what
 preprocessing functions are supported below.
 
 - [ ] min\_max_scale
-- [ ] z_normalise
+- [X] z_normalise
 - [X] mode\_impute; TODO: Add a description.
 - [ ] mean\_impute
 - [ ] median\_impute
@@ -30,4 +30,4 @@ preprocessing functions are supported below.
 - [ ] dummy_var
 - [ ] geolocate *More aspirational, as it would entail converting 
 an address to x,y geo-coordinates using geopandas*
-- [ ] pass (i.e. do\_nothing)
+- [ ] pass (i.e. do\_nothing) 
