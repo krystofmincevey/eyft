@@ -31,3 +31,5 @@ preprocessing functions are supported below.
 - [ ] geolocate *More aspirational, as it would entail converting 
 an address to x,y geo-coordinates using geopandas*
 - [ ] pass (i.e. do\_nothing) 
+
+# ILL ADD EXTRA WHEN FUNCTIONS ARE OPTIMIZED !!!
