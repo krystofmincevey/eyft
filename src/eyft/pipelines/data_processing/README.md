@@ -29,8 +29,11 @@ preprocessing functions are supported below.
 - [ ] floor
 - [ ] dummy_var
 - [ ] merge
+- [ ] summ_statistics
 - [ ] boxplot
 - [ ] histogram
+- [ ] remove_symbols
+- [ ] remove_spaces
 - [ ] geolocate *More aspirational, as it would entail converting 
 an address to x,y geo-coordinates using geopandas*
 - [ ] pass (i.e. do\_nothing) 
