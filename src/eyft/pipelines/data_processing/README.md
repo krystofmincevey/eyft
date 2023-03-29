@@ -28,8 +28,9 @@ preprocessing functions are supported below.
 - [ ] cap\_3std
 - [ ] floor
 - [ ] dummy_var
+- [ ] merge
+- [ ] boxplot
+- [ ] histogram
 - [ ] geolocate *More aspirational, as it would entail converting 
 an address to x,y geo-coordinates using geopandas*
 - [ ] pass (i.e. do\_nothing) 
-
-# ILL ADD EXTRA WHEN FUNCTIONS ARE OPTIMIZED !!!
