@@ -101,18 +101,19 @@ def z_normalise(
     :param df: dataset we use
     :param col: you can choose the column you want to impute
     :param mean: you can choose the value used as mean in the standardization, if None => we use the calculated mean
-    :param stdev: you can choose the value used as standard deviation in the standardization, if None => we use the calculated standard deviation
+    :param stdev: you can choose the value used as standard deviation in the standardization, if None => we use the
+                    calculated standard deviation
     :return: dataframe with the imputed column
     """
     if mean is None:
         mean = df[col].mean()
         logger.info(f'Mean of {col} is {mean}.')
     if stdev is None:
-        stdev = df[col].std()
+        stdev = df[col].std(ddof=0)
         logger.info(f'StDev of {col} is {stdev}.')
-    df[col] = (df[col] - mean) / stdev
-    # What to do with the imputed values?
-    # df[col] = df[col].fillna()
+    if stdev != 0:
+        df[col] = (df[col] - mean) / stdev
+
     return {"df": df, "col": col, "mean": mean, "stdev": stdev}
 
 def min_max_scale(
@@ -136,8 +137,8 @@ def min_max_scale(
     if max_val is None:
         max_val = df[col].max()
         logger.info(f'min of {col} is {max_val}.')
-
-    df[col] = (df[col] - min_val) / (max_val - min_val)
+    if max_val - min_val != 0:
+        df[col] = (df[col] - min_val) / (max_val - min_val)
     return {"df": df, "col": col, "min_val": min_val, "max_val": max_val}
 
 
