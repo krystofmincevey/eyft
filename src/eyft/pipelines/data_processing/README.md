@@ -19,7 +19,7 @@ processing methods supported by the engine. Please specify what
 preprocessing functions are supported below.
 
 - [ ] min\_max_scale
-- [ ] z_normalise
+- [X] z_normalise
 - [X] mode\_impute; TODO: Add a description.
 - [ ] mean\_impute
 - [ ] median\_impute
