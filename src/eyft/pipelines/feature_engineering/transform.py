@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
+import geopandas
 
 from typing import (
-    Dict, List
+    Dict, List, Union, Tuple
 )
 
 from ..feature_engineering import logger
@@ -70,6 +71,30 @@ def divide_by(
         )
         df[new_col] = df[col] / df[by_col]
     return df
+
+
+def nan_categorize(
+    df: pd.DataFrame,
+    col: str,
+    na_flag: Union[bool] = True,
+    prefix: str = "missing",
+) -> pd.DataFrame:
+    """
+    :param df: dataset we use
+    :param col: you can choose the column you want to divide in dummy variables
+    :param na_flag: you can choose if you want to include NaN as a dummy
+    :param prefix: Alias prefix for new column -> {prefix}_{col}
+    """
+    df[f"{prefix}_{col}"] = pd.get_dummies(df[col], dummy_na=na_flag)
+    return df
+
+
+def geolocate(
+    df: geopandas.GeoDataFrame,
+    col: Union[str, Tuple[str]],
+    **kwargs,  # added just to collect additional vars passed to funct
+) -> pd.DataFrame:
+    raise NotImplementedError
 # -------------------------------------
 
 
@@ -79,6 +104,8 @@ class Transform(object):
         "log": log_transform,
         "multiply_by": multiply_by,
         "divide_by": divide_by,
+        "nan_categorize": nan_categorize,
+        "geolocate": geolocate,
     }
 
     def __init__(

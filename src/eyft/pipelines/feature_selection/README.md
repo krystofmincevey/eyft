@@ -28,7 +28,7 @@ Steps involved in bi-directional elimination are as follows:
 
 
 Implemented Methods:
-- [ ] select
+- [X] select
 - [ ] forward\_select
 - [ ] backward\_select
 - [ ] step\_wise\_select

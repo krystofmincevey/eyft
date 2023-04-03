@@ -20,22 +20,13 @@ preprocessing functions are supported below.
 
 - [ ] min\_max_scale
 - [X] z_normalise
-- [X] mode\_impute; TODO: Add a description.
+- [X] mode\_impute
 - [ ] mean\_impute
 - [ ] median\_impute
-- [ ] categorize
 - [ ] cap
 - [ ] cap\_3std
 - [ ] floor
-- [ ] dummy_var
-- [ ] merge
-- [ ] summ_statistics
-- [ ] boxplot
-- [ ] histogram
-- [ ] remove_symbols
-- [ ] remove_spaces
-- [ ] geolocate *More aspirational, as it would entail converting 
-an address to x,y geo-coordinates using geopandas*
+- [ ] categorize
 - [ ] pass (i.e. do\_nothing)
 
 **Testing progress**
@@ -48,22 +39,5 @@ an address to x,y geo-coordinates using geopandas*
 - [ ] cap
 - [ ] cap\_3std
 - [ ] floor
-- [ ] dummy_var
-- [ ] geolocate *More aspirational, as it would entail converting 
-an address to x,y geo-coordinates using geopandas*
 - [ ] pass (i.e. do\_nothing)
 
-**Testing progress**
-- [ ] min\_max_scale
-- [X] z_normalise; TODO: resolve github issues
-- [ ] mode\_impute; TODO: Add a description.
-- [ ] mean\_impute
-- [ ] median\_impute
-- [ ] categorize
-- [ ] cap
-- [ ] cap\_3std
-- [ ] floor
-- [ ] dummy_var
-- [ ] geolocate *More aspirational, as it would entail converting 
-an address to x,y geo-coordinates using geopandas*
-- [ ] pass (i.e. do\_nothing)

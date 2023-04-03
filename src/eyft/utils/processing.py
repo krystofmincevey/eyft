@@ -1,16 +1,129 @@
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+from typing import List
 
-# TODO: This one is not finished
-# def desc_statistics(
-#     df: pd.DataFrame,
-#     col: str,
-#     stat: Union[int, float] = None,
-# ) -> Dict[]
-#
-#     df[col] = df[col].describe
+from ..utils import logger
+
+
+# TODO: Check which things are done in place
+#   and potentially remove return statements.
+
+
+def remove_spaces(
+    df: pd.DataFrame,
+    col: str,
+) -> pd.DataFrame:
+    """
+    :param df: dataset we use
+    :param col: you can choose which column you want to clean
+    :return: self (i.e. pd.Dataframe changed in place)
+    """
+    df[col] = df[col].str.re.replace(" +", " ").str.trim()
+    return df
+
+
+def merge_data(
+    df_left: pd.DataFrame,
+    df_right: pd.DataFrame,
+    left_key: str,
+    right_key: str,
+    columns: list,
+    merge_type: str = "left",
+) -> pd.DataFrame:
+    """
+    :param df_left: dataset we want to enrich
+    :param df_right: dataset used to add information to the left dataset
+    :param left_key: field used for the matching in the target table
+    :param right_key: field used for the matching in the right table
+    :param columns: columns from the right table we want to add in the left table
+    :param merge_type: what type of join you want to do
+    """
+    for col in columns:
+        if col in df_left.columns:
+            logger.warning(
+                f"{col} already in df_left and "
+                f"hence not joined."
+            )
+
+    df_right = df_right[right_key, *columns]
+
+    df = df_left.merge(
+        df_right,
+        left_on=left_key,
+        right_on=right_key,
+        how=merge_type
+    )
+    return df
+
+
+# TODO: Not finished
+def sum_statistics(
+    df: pd.DataFrame,
+    col: str,
+):
+    """
+    :param df: dataset we use
+    :param col: you can choose the column where you want to know the summary statistics from
+    :return: the summary statistics of the chosen column
+    """
+    df[col] = df[col].describe
+
+
+def boxplot(
+    df: pd.DataFrame,
+    col: str,
+    by_user=str,
+):
+    """
+    :param df: dataset we use
+    :param col: you can choose the column you want to use to calculate a boxplot
+    :param by_user: optional choice to perform a grouping of the targeted column
+    :return: boxplot of the chosen column
+    """
+    plt.boxplot(df[col], by=by_user)
+    plt.show()
+
+
+def histogram(
+    df: pd.DataFrame,
+    col: str,
+    bins: List[float, int] = None,
+) -> List[float, int]:
+    """
+    :param df: dataset we use
+    :param col: you can choose the column you want to use to calculate the histogram
+    :param bins: numerical limits of the bins in the histogram
+    :return: histogram of the chosen column
+    """
+    if bins is None:
+        bins = np.histogram_bin_edges(df[col], bins="fd")
+    plt.hist(df[col], bins=bins)
+    plt.show()
+
+    return bins
+
+
+def remove_symbols(
+    df: pd.DataFrame,
+    col: str,
+    list_symbols: list,
+    cleaning_list: list,
+) -> pd.DataFrame:
+    """
+    :param df: dataset we use
+    :param col: you can choose the column you want to clean
+    :param list_symbols: symbols you want to remove
+    :param cleaning_list: what value needs to be put
+        instead of the removed symbol
+    """
+    if len(list_symbols) != len(cleaning_list):
+        raise "List of symbols length do not match with the cleaning values length"
+    for symbol, clean_symbol in zip(list_symbols, cleaning_list):
+        df[col] = df[col].str.replace(symbol, clean_symbol)
+    return df
 
 
 def explore(
@@ -39,9 +152,12 @@ def explore(
         try:
             sns.boxplot(x=x_col, y=y_col, data=df)
         except ValueError:
-            print.info(
+            logger.info(
                 f'Unable to plot X: {x_col} vs Y: {y_col}.'
             )
             pass
 
     plt.show()
+
+
+

@@ -1,15 +1,12 @@
 import pandas as pd
 import numpy as np
-import geopandas
-import matplotlib.pyplot as plt
-import re as re
 
 from typing import (
     Union, Tuple, Any, Dict, List, Callable
 )
 from collections import defaultdict
 
-from src.eyft.pipelines.feature_selection import logger
+from ..data_processing import logger
 
 
 # -------------------------------------
@@ -17,6 +14,8 @@ from src.eyft.pipelines.feature_selection import logger
 #  This will allow you to process both train and
 #  test data.
 # TODO: Always have df and col in kwargs of processor nodes.
+# TODO: Check which things are done in place
+#   and potentially remove return statements.
 
 
 def do_nothing(
@@ -32,13 +31,10 @@ def mean_impute(
     col: str,
     mean: Union[float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
     """
-
     :param df: dataset we use
     :param col: you can choose the column you want to impute
     :param mean: you can choose the imputation value, if None => we use the calculated mean
-    :return: dataframe with the imputed column
     """
     if mean is None:
         mean = float(df[col].mean())
@@ -48,19 +44,15 @@ def mean_impute(
     return {"df": df, "col": col, "mean": mean}
 
 
-
 def mode_impute(
     df: pd.DataFrame,
     col: str,
     mode: Union[float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
     """
-
     :param df: dataset we use
     :param col: you can choose the column you want to impute
     :param mode: you can choose the imputation value, if None => we use the calculated mode
-    :return: dataframe with the imputed column
     """
     if mode is None:
         mode = float(df[col].mode())
@@ -69,18 +61,16 @@ def mode_impute(
     df[col] = df[col].fillna(mode)
     return {"df": df, "col": col, "mode": mode}
 
+
 def median_impute(
     df: pd.DataFrame,
     col: str,
     median: Union[float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
     """
-
     :param df: dataset we use
     :param col: you can choose the column you want to impute
     :param median: you can choose the imputation value, if None => we use the calculated median
-    :return: dataframe with the imputed column
     """
     if median is None:
         median = float(df[col].median())
@@ -89,21 +79,21 @@ def median_impute(
     df[col] = df[col].fillna(median)
     return {"df": df, "col": col, "median": median}
 
+
 def z_normalise(
     df: pd.DataFrame,
     col: str,
     mean: Union[int, float] = None,
     stdev: Union[int, float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
     """
-
     :param df: dataset we use
     :param col: you can choose the column you want to impute
-    :param mean: you can choose the value used as mean in the standardization, if None => we use the calculated mean
-    :param stdev: you can choose the value used as standard deviation in the standardization, if None => we use the
-                    calculated standard deviation
-    :return: dataframe with the imputed column
+    :param mean: you can choose the value used as mean in the
+        standardization, if None => we use the calculated mean
+    :param stdev: you can choose the value used as standard
+        deviation in the standardization, if None => we use the
+        calculated standard deviation
     """
     if mean is None:
         mean = df[col].mean()
@@ -116,20 +106,20 @@ def z_normalise(
 
     return {"df": df, "col": col, "mean": mean, "stdev": stdev}
 
+
 def min_max_scale(
     df: pd.DataFrame,
     col: str,
     min_val: Union[int, float] = None,
     max_val: Union[int, float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
     """
-
     :param df: dataset we use
     :param col: you can choose the column you want to impute
-    :param min_val: you can choose the value used as minimum in the scaling, if None => we use the calculated minimum
-    :param max_val: you can choose the value used as maximum in the scaling, if None => we use the calculated maximum
-    :return: dataframe with the imputed column
+    :param min_val: you can choose the value used as
+        minimum in the scaling, if None => we use the calculated minimum
+    :param max_val: you can choose the value used as
+        maximum in the scaling, if None => we use the calculated maximum
     """
     if min_val is None:
         min_val = df[col].min()
@@ -148,14 +138,12 @@ def cap_3std(
     mean: Union[int, float] = None,
     stdev: Union[int, float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
     """
-
     :param df: dataset we use
     :param col: you can choose the column you want to impute
     :param mean: you can choose the value used as mean, if None => we use the calculated mean
-    :param stdev: you can choose the value used as standard deviation, if None => we use the calculated standard deviation
-    :return: dataframe with the imputed column
+    :param stdev: you can choose the value used as standard deviation,
+        if None => we use the calculated standard deviation
     """
     if mean is None:
         mean = df[col].mean()
@@ -167,19 +155,17 @@ def cap_3std(
     df[col] = np.where(df[col] > mean + 3 * stdev, mean + 3 * stdev, df[col])
     return {"df": df, "col": col, "stdev": stdev}
 
+
 def cap_perc(
     df: pd.DataFrame,
     col: str,
     cap: Union[float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
     """
-
     :param df: dataset we use
     :param col: you can choose the column you want to impute
     :param cap: you can choose the percentile used for the capping of the outliers,
-                if None => we use the 0.99 percentile
-    :return: dataframe with the imputed column
+        if None => we use the 0.99 percentile
     """
     if cap is None:
         cap_perc_value = df[col].quantile(0.99)
@@ -192,21 +178,16 @@ def cap_perc(
     return{"df": df, "col": col, "cap_perc": cap, "cap_perc_value": cap_perc_value}
 
 
-
-
 def floor_perc(
     df: pd.DataFrame,
     col: str,
     floor: Union[float] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
     """
-
     :param df: dataset we use
     :param col: you can choose the column you want to impute
     :param floor: you can choose the percentile used for the flooring of the outliers,
-                  if None => we use the 0.01 percentile
-    :return: dataframe with the imputed column
+        if None => we use the 0.01 percentile
     """
     if floor is None:
         floor_perc_value = df[col].quantile(0.01)
@@ -219,189 +200,42 @@ def floor_perc(
     return{"df": df, "col": col, "floor": floor, "floor_perc_value": floor_perc_value}
 
 
-
-
-def dummy_var(
-    df: pd.DataFrame,
-    col: str,
-    na_flag: Union[bool] = None,
-) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
-    """
-
-    :param df: dataset we use
-    :param col: you can choose the column you want to divide in dummy variables
-    :param na_flag: you can choose if you want to include NaN as a dummy
-    :return: dataframe with the dummy variables
-    """
-    if na_flag is None:
-        na_flag = True
-    df[col] = pd.get_dummies(df[col], dummy_na= na_flag)
-    return{"df": df, "col": col, "na_flag": na_flag}
-
 def categorize(
     df: pd.DataFrame,
     col: str,
-    edges_cat: Union[list] is None,
+    bins: List[Union[float, int]] = None,
+    prefix: str = ''
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
     """
-
     :param df: dataset we use
     :param col: you can choose the column that you want to categorize
     :param bins: numerical limits of the bins for the categories
-    :return: values within the chosen categories
+    :param prefix: Alias prefix for new column -> {prefix}_{col}
     """
-    if edges_cat is None:
-        edges_cat = np.histogram_bin_edges(df[col], bins="auto")
-    df['new'] = pd.cut(df[col], bins=edges_cat)
-    return{"df": df, "edges": edges_cat}
+    if bins is None:
+        bins = np.histogram_bin_edges(df[col], bins="auto")
 
-def merge_data(
-    left: pd.DataFrame,
-    right: pd.DataFrame,
-    left_key: str,
-    right_key: str,
-    columns: list,
-    merge_type: Union[str] = "left",
-) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    if prefix:
+        new_col = f"{prefix}_{col}"
+    else:
+        new_col = col
 
-    """
-
-    :param left: dataset we want to enrich
-    :param right: dataset used to add information to the left dataset
-    :param left_key: field used for the matching in the target table
-    :param right_key: field used for the matching in the right table
-    :param columns: columns from the right table we want to add in the left table
-    :param merge_type: what type of join you want to do
-    :return: merged dataset you wanted
-    """
-    columns = [right_key] + columns
-    right = right[columns]
-    left = left.merge(right, left_on = left_key, right_on = right_key, how = merge_type)
-    return{"df": left, "cols": columns}
-
-def summ_statistics(
-    df: pd.DataFrame,
-    col: str,
-) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
-    """
-
-    :param df: dataset we use
-    :param col: you can choose the column where you want to know the summary statistics from
-    :return: the summary statistics of the chosen column
-    """
-
-    df[col] = df[col].describe
-
-def boxplot(
-    df: pd.DataFrame,
-    col: str,
-    by_user = str,
-) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
-    """
-
-    :param df: dataset we use
-    :param col: you can choose the column you want to use to calculate a boxplot
-    :param by_user: optional choice to perform a grouping of the targeted column
-    :return: boxplot of the chosen column
-    """
-
-    b_plot = plt.boxplot(df[col], by=by_user )
-    return{"b_plot": b_plot, "grouped_by": by_user}
-
-"""
-def boxplot(
-    df: pd.DataFrame,
-    col: str,
-    box: Union[str] = None,
-) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
-    plt.boxplot(col = str, by = str)
-    #WHAT I TRY TO DO IS CREATING A BOXPLOT WHERE THEY CAN COMPARE F.I. RANGE IN PRICE FOR DIFFERENT LOCATIONS
-"""
-
-def histogram(
-    df: pd.DataFrame,
-    col: str,
-    edges: Union[list] is None,
-) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
-
-    """
-
-    :param df: dataset we use
-    :param col: you can choose the column you want to use to calculate the histogram
-    :param edges: numerical limits of the bins in the histogram
-    :return: histogram of the chosen column
-    """
-    if edges is None:
-        edges = np.histogram_bin_edges(df[col], bins="fd")
-    plot = plt.hist(df[col], bins=edges)
-    return{"plot": plot}
+    df[new_col] = pd.cut(df[col], bins=bins)
+    return{"df": df, "col": col, "bins": bins, "prefix": prefix}
 
 
-
-
-
-# move to dummy
-
-
-def remove_symbols(
-        df: pd.DataFrame,
-        col: str,
-        list_symbols: list,
-        cleaning_list: list,
-) -> Dict[str, Union[pd.DataFrame, str, list]]:
-
-    """
-
-    :param df: dataset we use
-    :param col: you can choose the column you want to clean
-    :param list_symbols: symbols you want to remove
-    :param cleaning_list: what value needs to be put instead of the removed symbol
-    :return: dataset with removed symbols
-    """
-    if len(list_symbols) != len(cleaning_list):
-        raise "List of symbols length do not match with the cleaning values length"
-    for n in range(list_symbols):
-        df[col] = df[col].str.replace(list_symbols[n], cleaning_list[n])
-    return {"df": df, "col": col}
-
-def remove_spaces(
-        df: pd.DataFrame,
-        col: str,
-):
-    """
-
-    :param df: dataset we use
-    :param col: you can choose which column you want to clean
-    :return: dataset with removed spaces
-    """
-
-    df[col] = df[col].str.re.replace(" +", " ").str.trim()
-
-
-
-def geolocate(
-    df: geopandas.GeoDataFrame,
-    col: Union[str, Tuple[str]],
-) -> Dict[str, Union[geopandas.GeoDataFrame, str, int, float]]:
-
-
-    raise NotImplementedError
 # -------------------------------------
-
-
 class Processor(object):
 
     MAPPER = {
         "mean_impute": mean_impute,
         "mode_impute": mode_impute,
+        "median_impute": median_impute,
         "z_normalise": z_normalise,
         "categorize": categorize,
         "cap_3std": cap_3std,
+        "floor": floor_perc,
+        "cap": cap_perc,
         "pass": do_nothing,
     }
 

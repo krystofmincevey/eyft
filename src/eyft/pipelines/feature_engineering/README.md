@@ -13,7 +13,10 @@ to generate the new features and the values
 indicates how the new features are to be created.
 
 Implement:
-- [ ] Log transform
-- [ ] Scaling - i.e. divide\_by
-- [ ] Product - i.e. multiply\_by
+- [ ] log
+- [ ] divide\_by
+- [ ] multiply\_by
+- [ ] nan\_categorize
+- [ ] geolocate *More aspirational, as it would entail converting 
+an address to x,y geo-coordinates using geopandas*
 - ...
