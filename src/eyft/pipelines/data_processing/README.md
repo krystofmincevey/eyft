@@ -23,9 +23,9 @@ preprocessing functions are supported below.
 - [X] mode\_impute
 - [X] mean\_impute
 - [X] median\_impute
-- [ ] cap
+- [X] cap
 - [X] cap\_3std
-- [ ] floor
+- [X] floor
 - [ ] categorize
 - [ ] pass (i.e. do\_nothing)
 
@@ -36,8 +36,8 @@ preprocessing functions are supported below.
 - [X] mean\_impute
 - [X] median\_impute
 - [ ] categorize
-- [ ] cap
+- [X] cap
 - [X] cap\_3std
-- [ ] floor
+- [X] floor
 - [ ] pass (i.e. do\_nothing)
 

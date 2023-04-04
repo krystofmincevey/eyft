@@ -169,13 +169,13 @@ def cap_perc(
     """
     if cap is None:
         cap_perc_value = df[col].quantile(0.99)
-        logger.info(f'cap of {col} is {cap}.')
+        logger.info(f'cap of {col} is {cap_perc_value}.')
     elif cap <= 0 or cap >= 1:
         raise "You need to insert a number between 0 and 1"
     else:
         cap_perc_value = df[col].quantile(cap)
     df[col] = np.where(df[col] > cap_perc_value, cap_perc_value, df[col])
-    return{"df": df, "col": col, "cap_perc": cap, "cap_perc_value": cap_perc_value}
+    return{"df": df, "col": col, "cap": cap, "cap_perc_value": cap_perc_value}
 
 
 def floor_perc(
