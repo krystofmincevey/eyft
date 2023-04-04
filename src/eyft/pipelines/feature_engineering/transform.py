@@ -6,6 +6,8 @@ from typing import (
     Dict, List, Union, Tuple
 )
 
+from pandas import DataFrame
+
 from ..feature_engineering import logger
 
 
@@ -17,14 +19,15 @@ def log_transform(
     col: str,
     prefix: str = "log",
     **kwargs,  # added just to collect additional vars passed to funct
-) -> pd.DataFrame:
+) -> dict[str, str | DataFrame]:
     new_col = f"{prefix}_{col}"
     if new_col not in df.columns:
         logger.info(
             f"Adding new column: {new_col}, to df."
         )
         df[new_col] = np.log(df[col])
-    return df
+    return{"df": df, "col": col, "prefix": prefix}
+
 
 
 def multiply_by(
@@ -57,6 +60,15 @@ def divide_by(
     connector: str = "div_by",
     **kwargs,  # added just to collect additional vars passed to funct
 ) -> pd.DataFrame:
+    """
+
+    :param df: dataset we use
+    :param col: column you want to divide
+    :param by_col: column you want to use as deviation
+    :param connector:
+    :param kwargs:
+    :return:
+    """
 
     for _col in [col, by_col]:
         if _col not in df.columns:
@@ -70,6 +82,7 @@ def divide_by(
             f"Adding new column: {new_col}, to df."
         )
         df[new_col] = df[col] / df[by_col]
+
     return df
 
 
