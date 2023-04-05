@@ -86,7 +86,7 @@ def divide_by(
     return df
 
 
-def nan_categorize(
+def nan_dummies(
     df: pd.DataFrame,
     col: str,
     na_flag: Union[bool] = True,
@@ -98,7 +98,8 @@ def nan_categorize(
     :param na_flag: you can choose if you want to include NaN as a dummy
     :param prefix: Alias prefix for new column -> {prefix}_{col}
     """
-    df[f"{prefix}_{col}"] = pd.get_dummies(df[col], dummy_na=na_flag)
+    df = pd.concat([df, pd.get_dummies(df, dummy_na=na_flag, prefix=prefix)], axis=1)
+    df = df.drop(columns=col, axis=1)
     return df
 
 
@@ -117,7 +118,7 @@ class Transform(object):
         "log": log_transform,
         "multiply_by": multiply_by,
         "divide_by": divide_by,
-        "nan_categorize": nan_categorize,
+        "nan_dummies": nan_dummies,
         "geolocate": geolocate,
     }
 

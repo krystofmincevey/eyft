@@ -204,6 +204,7 @@ def categorize(
     df: pd.DataFrame,
     col: str,
     bins: List[Union[float, int]] = None,
+    labels: List[str] = None,
     prefix: str = ''
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
     """
@@ -220,7 +221,7 @@ def categorize(
     else:
         new_col = col
 
-    df[new_col] = pd.cut(df[col], bins=bins)
+    df[new_col] = pd.cut(df[col], bins=bins, labels=labels)
     return{"df": df, "col": col, "bins": bins, "prefix": prefix}
 
 

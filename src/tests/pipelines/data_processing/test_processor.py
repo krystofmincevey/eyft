@@ -179,6 +179,7 @@ class TestFloorPerc(object):
 
 class TestCategorize(object):
     def test_categorize(self, epc_input):
-        df_actual = categorize(df=epc_input, col='Bedrooms', bins=[0, 1, 2, 3, 4, 5])['df']
-        df_expected = pd.Series([0, 2, 4, 2, 0], name='Bedrooms')
+        df_actual = categorize(df=epc_input, col='Price', bins=[0, 2*100000, 4*100000], labels=["a", "b"])['df']
+        df_actual = pd.Series(df_actual['Price'].tolist(), name='Price')
+        df_expected = pd.Series(['b', 'a', 'a', 'a', 'b', 'b', 'b', 'b'], name='Price')
         assert_series_equal(df_actual, df_expected, check_dtype=False)
