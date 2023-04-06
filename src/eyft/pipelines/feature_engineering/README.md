@@ -16,7 +16,7 @@ Implement:
 - [X] log
 - [X] divide\_by
 - [X] multiply\_by
-- [-] nan\_dummies
+- [ ] multiply\_all
 - [ ] geolocate *More aspirational, as it would entail converting 
 an address to x,y geo-coordinates using geopandas*
 - ...

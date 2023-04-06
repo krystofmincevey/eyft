@@ -13,8 +13,8 @@ from ...utils.constants import SEED, RF_PARAMS
 
 # TODO: Integrate feature selection into either random or bayesian
 #  search during model selection.
-# TODO: Test feature selection functions. ERRORS may exist in functions!
-# TODO: Transition to spitting out scores instead of features.
+# TODO: Arthur: Test feature selection functions. ERRORS may exist in functions which you may have to fix!
+# TODO: Implement CV feature selection
 
 
 def select(
@@ -208,9 +208,13 @@ def lasso(
         cutoff: float,
 ) -> List[str]:
     """
-    Keep weights that are larger than cutoff.
+    Keep weights that are larger than cutoff,
+    using lasso regressions to determine weights.
     """
+
+    # TODO: Arthur
     raise NotImplementedError
+    # return features
 
 
 def pearson(
@@ -221,7 +225,11 @@ def pearson(
     Keep features that have a pearson
     correlation lower than the cutoff.
     """
+
+    # TODO: Arthur
+
     raise NotImplementedError
+    # return features
 
 
 def vif(
@@ -235,7 +243,7 @@ def vif(
     smaller than cutoff
     """
 
-    round = 1
+    i = 1
     max_vif_feature = 'None'  # kept as string so that while loop commences
     collinear_variables = []
     x_df = df.loc[:, ~df.columns.isin([y_col])]
@@ -266,9 +274,9 @@ def vif(
         if max_vif_feature is not None:
             df = df.drop([max_vif_feature], axis=1)
             features.remove(max_vif_feature)
-            logger.info(f'ROUND {round}: {max_vif_feature} is dropped with vif {max_vif}')
+            logger.info(f'ROUND {i}: {max_vif_feature} is dropped with vif {max_vif}')
             collinear_variables.append(max_vif_feature)
-        round += 1
+        i += 1
 
     return features
 

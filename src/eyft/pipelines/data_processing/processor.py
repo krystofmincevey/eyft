@@ -156,51 +156,87 @@ def cap_3std(
     return {"df": df, "col": col, "stdev": stdev}
 
 
-def cap_perc(
+# TODO: Arthur - please modify test to take into account new variables
+def cap(
     df: pd.DataFrame,
     col: str,
-    cap: Union[float] = None,
+    prc_cap: float = 0.99,
+    abs_cap: float = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
     """
     :param df: dataset we use
     :param col: you can choose the column you want to impute
-    :param cap: you can choose the percentile used for the capping of the outliers,
-        if None => we use the 0.99 percentile
+    :param prc_cap: you can choose the percentile used for the
+        capping of the outliers,
+    :param abs_cap: if specified prc_cap is not used, and the absolute
+        cap value is used to cap values in col.
     """
-    if cap is None:
-        cap_perc_value = df[col].quantile(0.99)
-        logger.info(f'cap of {col} is {cap_perc_value}.')
-    elif cap <= 0 or cap >= 1:
-        raise "You need to insert a number between 0 and 1"
-    else:
-        cap_perc_value = df[col].quantile(cap)
-    df[col] = np.where(df[col] > cap_perc_value, cap_perc_value, df[col])
-    return{"df": df, "col": col, "cap": cap, "cap_perc_value": cap_perc_value}
+    if abs_cap is None:
+
+        if prc_cap <= 0 or prc_cap >= 1:
+            raise ValueError(
+                f"prc_cap must be between 0 and 1 and not {prc_cap}"
+            )
+        else:
+            logger.info(f"Capping values above {prc_cap}prc.")
+            abs_cap = df[col].quantile(prc_cap)
+
+    df[col] = np.where(df[col] > abs_cap, abs_cap, df[col])
+    return{"df": df, "col": col, "prc_cap": prc_cap, "abs_cap": abs_cap}
 
 
-def floor_perc(
+# TODO: Arthur - please modify test to take into account new variables
+def floor(
     df: pd.DataFrame,
     col: str,
-    floor: Union[float] = None,
+    prc_floor: float = 0.01,
+    abs_floor: float = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
     """
     :param df: dataset we use
     :param col: you can choose the column you want to impute
-    :param floor: you can choose the percentile used for the flooring of the outliers,
+    :param prc_floor: you can choose the percentile used for the flooring of the outliers,
         if None => we use the 0.01 percentile
+    :param abs_floor: if specified prc_floor is not used, and the absolute
+        floor value is used to floor values in col.
     """
-    if floor is None:
-        floor_perc_value = df[col].quantile(0.01)
-        logger.info(f'floor of {col} is {floor_perc}.')
-    elif floor <= 0 or floor >= 1:
-        raise "You need to insert a number between 0 and 1"
-    else:
-        floor_perc_value = df[col].quantile(floor)
-    df[col] = np.where(df[col] < floor_perc_value, floor_perc_value, df[col])
-    return{"df": df, "col": col, "floor": floor, "floor_perc_value": floor_perc_value}
+    if abs_floor is None:
+
+        if prc_floor <= 0 or prc_floor >= 1:
+            raise ValueError(
+                f"prc_cap must be between 0 and 1 and not {prc_floor}"
+            )
+        else:
+            logger.info(f"Capping values above {prc_floor}prc.")
+            abs_floor = df[col].quantile(prc_floor)
+
+    df[col] = np.where(df[col] < abs_floor, abs_floor, df[col])
+    return{"df": df, "col": col, "prc_floor": prc_floor, "abs_floor": abs_floor}
 
 
-def categorize(
+def floor_and_cap(
+        df: pd.DataFrame,
+        col: str,
+        prc_cap: float = 0.01,
+        abs_cap: float = None,
+        prc_floor: float = 0.01,
+        abs_floor: float = None,
+):
+    """
+    Performs both capping and flooring
+    on a column at the same time.
+    """
+
+    # TODO: Arthur
+
+    return {
+        "df": df, "col": col,
+        "prc_floor": prc_floor, "abs_floor": abs_floor,
+        "prc_cap": prc_cap, "abs_cap": abs_cap,
+    }
+
+
+def segment(
     df: pd.DataFrame,
     col: str,
     bins: List[Union[float, int]] = None,
@@ -211,6 +247,8 @@ def categorize(
     :param df: dataset we use
     :param col: you can choose the column that you want to categorize
     :param bins: numerical limits of the bins for the categories
+    :param labels: specifies the labels for the returned bins.
+        Must be the same length as the resulting bins.
     :param prefix: Alias prefix for new column -> {prefix}_{col}
     """
     if bins is None:
@@ -225,6 +263,61 @@ def categorize(
     return{"df": df, "col": col, "bins": bins, "prefix": prefix}
 
 
+def cat_dummies(
+    df: pd.DataFrame,
+    col: str,
+    prefix: str = ''
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    """
+    Function for tracking presence of nans (missing values).
+    A new column in df (with name new_col) should be created.
+
+    I.E. [10, 40, nan, 40] -> [0, 0, 1, 0]
+        ['a', 'b', '', nan, 'f'] -> [0, 0, 1, 1, 0]
+    """
+    if prefix:
+        new_col = f"{prefix}_{col}"
+    else:
+        new_col = col
+
+    # TODO: Arthur
+
+    return {"df": df, "col": col, "prefix": prefix}
+
+
+def categorize(
+    df: pd.DataFrame,
+    col: str,
+    cats: List[str],
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+    """
+    Function that creates dummies for each category
+    of df[col]. Note that if categories are specified
+    (think test data) than the function should use these
+    to categorize the column. If cats are not provided
+    that the function should find all the unique values
+    in df[col] and create dummies for each category.
+    The dummies are to be stored in columns following
+    the naming {col}_{category}.
+
+    EG:
+    vals: ['a', 'b', 'a', 'd', nan] ->
+        should create 3 extra columns:
+        vals_a: [1, 0, 1, 0, 0]
+        vals_b: [0, 1, 0, 0, 0]
+        vals_d: [0, 0, 0, 1, 0]
+
+    if cats are provided (imagine if cats = ['a', 'd']
+    than only two cols are created:
+        vals_a: [1, 0, 1, 0, 0]
+        vals_d: [0, 0, 0, 1, 0]
+    """
+
+    # TODO: Arthur
+
+    return {"df": df, "col": col, "cats": cats}
+
+
 # -------------------------------------
 class Processor(object):
 
@@ -233,10 +326,10 @@ class Processor(object):
         "mode_impute": mode_impute,
         "median_impute": median_impute,
         "z_normalise": z_normalise,
-        "categorize": categorize,
+        "categorize": segment,
         "cap_3std": cap_3std,
-        "floor": floor_perc,
-        "cap": cap_perc,
+        "floor": floor,
+        "cap": cap,
         "pass": do_nothing,
     }
 

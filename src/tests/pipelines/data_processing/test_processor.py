@@ -3,7 +3,7 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 
 from eyft.pipelines.data_processing.processor import (
     mean_impute, mode_impute, median_impute, z_normalise, min_max_scale,
-    cap_3std, cap_perc, floor_perc, categorize
+    cap_3std, cap, floor, segment
 )
 
 
@@ -138,7 +138,7 @@ class TestMedianImpute(object):
 
 class TestCapPerc(object):
     def test_value_cap(self, epc_input):
-        df_actual = cap_perc(df=epc_input, col='Facades', cap=0.50)['df']
+        df_actual = cap(df=epc_input, col='Facades', cap=0.50)['df']
 
         df_expected = pd.DataFrame(
             data=[
@@ -159,7 +159,7 @@ class TestCapPerc(object):
 
 class TestFloorPerc(object):
     def test_value_floor(self, epc_input):
-        df_actual = floor_perc(df=epc_input, col='Facades', floor=0.05)['df']
+        df_actual = floor(df=epc_input, col='Facades', floor=0.05)['df']
 
         df_expected = pd.DataFrame(
             data=[
@@ -179,7 +179,7 @@ class TestFloorPerc(object):
 
 class TestCategorize(object):
     def test_categorize(self, epc_input):
-        df_actual = categorize(df=epc_input, col='Price', bins=[0, 2*100000, 4*100000], labels=["a", "b"])['df']
+        df_actual = segment(df=epc_input, col='Price', bins=[0, 2 * 100000, 4 * 100000], labels=["a", "b"])['df']
         df_actual = pd.Series(df_actual['Price'].tolist(), name='Price')
         df_expected = pd.Series(['b', 'a', 'a', 'a', 'b', 'b', 'b', 'b'], name='Price')
         assert_series_equal(df_actual, df_expected, check_dtype=False)

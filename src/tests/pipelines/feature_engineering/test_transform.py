@@ -3,7 +3,7 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 import numpy as np
 
 from eyft.pipelines.feature_engineering.transform import (
-    Transform, log_transform, nan_dummies
+    Transform, log_transform
 )
 
 
@@ -56,21 +56,3 @@ class TestLogTransform(object):
 
         assert_frame_equal(df_actual['df'], df_expected, check_dtype=False)
 
-
-class TestNaNDummies(object):
-    def test_dummies(self, processed_inputs):
-        df_actual = nan_dummies(df=processed_inputs, col='Bedrooms', na_flag=True)
-        df_expected = pd.DataFrame(
-            data=[
-                [300, 3, 2, 2.59e+02, 0, 0, 1],
-                [200, 2, 2, 6.44e+02, 0, 1, 0],
-                [400, 2, 4, 6.44e+02, 0, 1, 0],
-                [50, 2, 2, 2.06e+02, 0, 1, 0],
-                [500, 2, 1, 2.29e+02, 0, 1, 0],
-                [300, 3, 2, 4.40e+01, 0, 0, 1],
-                [1000, 1, 2, 0.00e+00, 1, 0, 0],
-                [2000, 1, 4, 0.00e+00, 1, 0, 0],
-            ],
-            columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'missing_1', 'missing_2', 'missing_3']
-        )
-        assert_frame_equal(df_actual, df_expected, check_dtype=False)

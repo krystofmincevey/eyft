@@ -26,7 +26,7 @@ preprocessing functions are supported below.
 - [X] cap
 - [X] cap\_3std
 - [X] floor
-- [ ] categorize
+- [ ] segment
 - [ ] pass (i.e. do\_nothing)
 
 **Testing progress**
@@ -35,7 +35,7 @@ preprocessing functions are supported below.
 - [X] mode\_impute; TODO: Add a description.
 - [X] mean\_impute
 - [X] median\_impute
-- [ ] categorize
+- [ ] segment
 - [X] cap
 - [X] cap\_3std
 - [X] floor

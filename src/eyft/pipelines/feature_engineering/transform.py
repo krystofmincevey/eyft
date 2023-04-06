@@ -19,15 +19,14 @@ def log_transform(
     col: str,
     prefix: str = "log",
     **kwargs,  # added just to collect additional vars passed to funct
-) -> dict[str, str | DataFrame]:
+) -> pd.DataFrame:
     new_col = f"{prefix}_{col}"
     if new_col not in df.columns:
         logger.info(
             f"Adding new column: {new_col}, to df."
         )
         df[new_col] = np.log(df[col])
-    return{"df": df, "col": col, "prefix": prefix}
-
+    return df
 
 
 def multiply_by(
@@ -86,20 +85,21 @@ def divide_by(
     return df
 
 
-def nan_dummies(
+def multiply_all(
     df: pd.DataFrame,
     col: str,
-    na_flag: Union[bool] = True,
-    prefix: str = "missing",
-) -> pd.DataFrame:
+    suffix: str = "mult_all",
+    **kwargs,  # added just to collect additional vars passed to funct
+):
     """
-    :param df: dataset we use
-    :param col: you can choose the column you want to divide in dummy variables
-    :param na_flag: you can choose if you want to include NaN as a dummy
-    :param prefix: Alias prefix for new column -> {prefix}_{col}
+    Function to mutliply all columns
+    that contain col in name.
+    EG: if cols ['a', 'aa', 'bc', 'ab'] in df
+    than if col = 'a' multiply 'a' x 'aa' x 'ab'.
     """
-    df = pd.concat([df, pd.get_dummies(df, dummy_na=na_flag, prefix=prefix)], axis=1)
-    df = df.drop(columns=col, axis=1)
+
+    # TODO: Arthur
+
     return df
 
 
@@ -109,6 +109,7 @@ def geolocate(
     **kwargs,  # added just to collect additional vars passed to funct
 ) -> pd.DataFrame:
     raise NotImplementedError
+    # return df
 # -------------------------------------
 
 
@@ -117,8 +118,8 @@ class Transform(object):
     MAPPER = {
         "log": log_transform,
         "multiply_by": multiply_by,
+        "multiply_all": multiply_all,
         "divide_by": divide_by,
-        "nan_dummies": nan_dummies,
         "geolocate": geolocate,
     }
 
