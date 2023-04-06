@@ -54,5 +54,5 @@ class TestLogTransform(object):
             columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'log_Price']
         )
 
-        assert_frame_equal(df_actual['df'], df_expected, check_dtype=False)
+        assert_frame_equal(df_actual, df_expected, check_dtype=False)
 
