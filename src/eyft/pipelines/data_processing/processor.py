@@ -221,11 +221,32 @@ def floor_and_cap(
         abs_cap: float = None,
         prc_floor: float = 0.01,
         abs_floor: float = None,
-):
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
     """
     Performs both capping and flooring
     on a column at the same time.
     """
+    if abs_floor:
+
+        if prc_floor <= 0 or prc_floor >= 1:
+            raise ValueError(
+                f"prc_floor must be between 0 and 1 and not {prc_floor}"
+            )
+        else:
+            logger.info(f"Capping values above {prc_floor}prc.")
+            abs_floor = df[col].quantile(prc_floor)
+    if abs_cap is None:
+
+        if prc_cap <= 0 or prc_cap >= 1:
+            raise ValueError(
+                f"prc_cap must be between 0 and 1 and not {prc_cap}"
+            )
+        else:
+            logger.info(f"Capping values above {prc_cap}prc.")
+            abs_cap = df[col].quantile(prc_cap)
+
+    df[col] = np.where(df[col] < abs_floor, abs_floor, df[col])
+    df[col] = np.where(df[col] > abs_cap, abs_cap, df[col])
 
     # TODO: Arthur
 
