@@ -4,6 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from typing import List
+from scipy import stats
 
 from ..utils import logger
 
@@ -123,6 +124,46 @@ def remove_symbols(
         raise "List of symbols length do not match with the cleaning values length"
     for symbol, clean_symbol in zip(list_symbols, cleaning_list):
         df[col] = df[col].str.replace(symbol, clean_symbol)
+    return df
+
+
+def normalise(df: pd.DataFrame, cols: list, is_plot=False):
+    """
+    Transform continuous covariates that are not
+    gaussian.
+    """
+    for col in cols:
+        stat, p = stats.shapiro(df[col].values)
+        if p < 0.01:
+            print(f'\n{col} may not be Gaussian.')
+            print(f'Pre Transformation; {col}:')
+            print(df[col].describe())
+
+            if is_plot:
+                df[col].plot.hist(title=col)
+                plt.show()
+
+            # BOX COX NEEDS + VALS
+            min_val = df[col].min()
+            if min_val <= 0:
+                normaliser = np.abs(min_val) + 1
+                print(f"Normaliser: {normaliser}")
+            else:
+                normaliser = 0
+
+            tf_vals, _lambda = stats.boxcox(df[col].values + normaliser)
+            df.drop(labels=[col], axis="columns", inplace=True)
+
+            new_col = f'{col}_plus_with_box_cox'
+
+            df[new_col] = tf_vals
+            print(f'Post transformation; {new_col} properties:')
+            print(df[new_col].describe())
+
+            if is_plot:
+                df[new_col].plot.hist(title=new_col)
+                plt.show()
+
     return df
 
 

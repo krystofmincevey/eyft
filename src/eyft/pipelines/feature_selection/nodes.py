@@ -4,6 +4,7 @@ import xgboost as xgb
 import statsmodels.api as sm
 
 from typing import List
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 from ..feature_engineering import logger
 from ...utils.models import _seed
@@ -16,19 +17,19 @@ from ...utils.constants import SEED, RF_PARAMS
 # TODO: Transition to spitting out scores instead of features.
 
 
-def _sm_model(X: pd.DataFrame, y: pd.DataFrame):
-    if len(np.unique(y.values)) <= 2:
-        model = sm.Logit(y, X)
-    else:
-        model = sm.OLS(y, sm.add_constant(X))
-    return model.fit()
-
-
 def select(
     df: pd.DataFrame,
     cols: List[str],
 ) -> pd.DataFrame:
     return df[cols]
+
+
+def _sm_model(x_df: pd.DataFrame, y_df: pd.DataFrame):
+    if len(np.unique(y_df.values)) <= 2:
+        model = sm.Logit(y_df, x_df)
+    else:
+        model = sm.OLS(y_df, sm.add_constant(x_df))
+    return model.fit()
 
 
 def forward_select(
@@ -62,7 +63,7 @@ def forward_select(
         remaining_features = list(set(initial_features) - set(best_features))
         new_pval = pd.Series(index=remaining_features)
         for new_column in remaining_features:
-            model = _sm_model(X=df[best_features + [new_column]], y=y)
+            model = _sm_model(x_df=df[best_features + [new_column]], y_df=y)
             new_pval[new_column] = model.pvalues[new_column]
 
         min_p_value = new_pval.min()
@@ -97,7 +98,7 @@ def backward_eliminate(
 
     y = df[y_col]
     while len(features) > 0:
-        model = _sm_model(X=df[features], y=y)
+        model = _sm_model(x_df=df[features], y_df=y)
         p_values = model.pvalues[features]
         max_p_value = p_values.max()
         if max_p_value >= cutoff:
@@ -142,7 +143,7 @@ def step_wise_select(
         remaining_features = list(set(initial_features) - set(best_features))
         new_pval = pd.Series(index=remaining_features)
         for new_column in remaining_features:
-            model = _sm_model(X=df[best_features + [new_column]], y=y)
+            model = _sm_model(x_df=df[best_features + [new_column]], y_df=y)
             new_pval[new_column] = model.pvalues[new_column]
         min_p_value = new_pval.min()
         if min_p_value < cutoff_in:
@@ -153,7 +154,7 @@ def step_wise_select(
 
             # BACKWARD ------------------------------------------------------
             while len(best_features) > 0:
-                model = _sm_model(X=df[best_features], y=y)
+                model = _sm_model(x_df=df[best_features], y_df=y)
                 p_values = model.pvalues[best_features]
                 max_p_value = p_values.max()
                 if max_p_value >= cutoff_out:
@@ -180,28 +181,25 @@ def random_forrest(
     (as determined by random forest)
     satisfying cutoff
     """
-    X = df.loc[:, ~df.columns.isin([y_col])]
+    df_x = df.loc[:, ~df.columns.isin([y_col])]
     y = df[y_col].values
 
+    # MODEL
     if len(np.unique(y)) < 2:
         model = xgb.XGBClassifier(random_state=SEED, max_depth=3)
     else:
         model = xgb.XGBRegressor(**RF_PARAMS)
 
-    model.fit(X, y)
+    model.fit(df_x, y)
     importance = model.get_booster().get_score(
         importance_type='weight', fmap=''
     )
 
-    tuples = list(importance.items())
-    tuples = sorted(tuples, key=lambda x: x[1])
-
-    best_features = []
-    for feature, imp in zip(*tuples):
-        if imp > cutoff:
-            best_features.append(feature)
-        else:
-            break
+    # SELECT BEST FEATURES
+    imp_tuples = list(importance.items())
+    best_features = [
+        feature for feature, imp in imp_tuples if imp > cutoff
+    ]
     return best_features
 
 
@@ -227,15 +225,52 @@ def pearson(
 
 
 def vif(
-        df: pd.DataFrame,
-        cutoff: float = 5,
+    df: pd.DataFrame,
+    y_col: str,
+    cutoff: float = 5,
+    exclude_cols: List[str] = [],
 ) -> List[str]:
     """
     Keep features that have a VIF (Variance Inflation Factor)
     smaller than cutoff
     """
-    raise NotImplementedError
 
+    round = 1
+    max_vif_feature = 'None'  # kept as string so that while loop commences
+    collinear_variables = []
+    x_df = df.loc[:, ~df.columns.isin([y_col])]
+    features = [col for col in x_df.columns if col not in exclude_cols]
+
+    logger.info('\nRemoving collinear variables...')
+    while max_vif_feature is not None:
+
+        # DETERMINE VIF:
+        _x_df = sm.add_constant(df[features])
+        vif = [
+            variance_inflation_factor(_x_df.values, i)
+            for i in range(_x_df.shape[1])
+        ]
+        vif_df = pd.DataFrame({'vif': vif[1:]}, index=features).T
+
+        # DETERMINE MAX VIF:
+        max_vif = cutoff
+        max_vif_feature = None
+        for column in vif_df.columns:
+            _vif = float(vif_df[column]['vif'])
+            # logger.info(f"ROUND {round}: {column} vif = {vif}")
+            if _vif > max_vif:
+                max_vif = _vif
+                max_vif_feature = column
+
+        # REMOVE MAX VIF FEATURE:
+        if max_vif_feature is not None:
+            df = df.drop([max_vif_feature], axis=1)
+            features.remove(max_vif_feature)
+            logger.info(f'ROUND {round}: {max_vif_feature} is dropped with vif {max_vif}')
+            collinear_variables.append(max_vif_feature)
+        round += 1
+
+    return features
 
 # TODO: Finalise scafold for feature selection
 # @_seed

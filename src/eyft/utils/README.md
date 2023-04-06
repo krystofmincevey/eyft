@@ -9,6 +9,7 @@
 - [ ] boxplot
 - [ ] histogram
 - [ ] remove_symbols
+- [ ] normalise
 
 
 ## Models:
