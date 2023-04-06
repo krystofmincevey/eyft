@@ -217,7 +217,7 @@ def floor(
 def floor_and_cap(
         df: pd.DataFrame,
         col: str,
-        prc_cap: float = 0.01,
+        prc_cap: float = 0.99,
         abs_cap: float = None,
         prc_floor: float = 0.01,
         abs_floor: float = None,
@@ -307,10 +307,11 @@ def categorize(
         vals_b: [0, 1, 0, 0, 0]
         vals_d: [0, 0, 0, 1, 0]
 
-    if cats are provided (imagine if cats = ['a', 'd']
+    if cats are provided (imagine if cats = ['a', 'd', 'e']
     than only two cols are created:
         vals_a: [1, 0, 1, 0, 0]
         vals_d: [0, 0, 0, 1, 0]
+        vals_e: [0, 0, 0, 0, 0]
     """
 
     # TODO: Arthur

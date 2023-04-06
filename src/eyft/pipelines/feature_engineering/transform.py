@@ -85,6 +85,22 @@ def divide_by(
     return df
 
 
+def inverse(
+        df: pd.DataFrame,
+        col: str,
+        prefix: str = 'inverse',
+        **kwargs,
+):
+    """
+    Performs 1/col and saves in new_col = {prefix}_{col}
+    use log function as guide.
+    """
+
+    # TODO: Arthur
+
+    return df
+
+
 def multiply_all(
     df: pd.DataFrame,
     col: str,
@@ -96,6 +112,26 @@ def multiply_all(
     that contain col in name.
     EG: if cols ['a', 'aa', 'bc', 'ab'] in df
     than if col = 'a' multiply 'a' x 'aa' x 'ab'.
+    store in {col}_{suffix}
+    """
+
+    # TODO: Arthur
+
+    return df
+
+
+def sum_all(
+    df: pd.DataFrame,
+    col: str,
+    suffix: str = "mult_all",
+    **kwargs,  # added just to collect additional vars passed to funct
+):
+    """
+    Function to sum all columns
+    that contain col in name.
+    EG: if cols ['a', 'aa', 'bc', 'ab'] in df
+    than if col = 'a' sum 'a' + 'aa' + 'ab'.
+    store in {col}_{suffix}
     """
 
     # TODO: Arthur

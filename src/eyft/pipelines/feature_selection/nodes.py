@@ -224,6 +224,12 @@ def pearson(
     """
     Keep features that have a pearson
     correlation lower than the cutoff.
+
+    IMAGINE IF in y = mx + c + error
+    in inputs you also had 2x
+    x and 2x  -> this can pose issues when modelling
+
+    check correlations and only keep either 2x or x but not both!
     """
 
     # TODO: Arthur
