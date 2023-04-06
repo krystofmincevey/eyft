@@ -6,6 +6,8 @@ from typing import (
     Dict, List, Union, Tuple
 )
 
+from pandas import DataFrame
+
 from ..feature_engineering import logger
 
 
@@ -17,14 +19,15 @@ def log_transform(
     col: str,
     prefix: str = "log",
     **kwargs,  # added just to collect additional vars passed to funct
-) -> pd.DataFrame:
+) -> dict[str, str | DataFrame]:
     new_col = f"{prefix}_{col}"
     if new_col not in df.columns:
         logger.info(
             f"Adding new column: {new_col}, to df."
         )
         df[new_col] = np.log(df[col])
-    return df
+    return{"df": df, "col": col, "prefix": prefix}
+
 
 
 def multiply_by(
@@ -57,6 +60,15 @@ def divide_by(
     connector: str = "div_by",
     **kwargs,  # added just to collect additional vars passed to funct
 ) -> pd.DataFrame:
+    """
+
+    :param df: dataset we use
+    :param col: column you want to divide
+    :param by_col: column you want to use as deviation
+    :param connector:
+    :param kwargs:
+    :return:
+    """
 
     for _col in [col, by_col]:
         if _col not in df.columns:
@@ -70,10 +82,11 @@ def divide_by(
             f"Adding new column: {new_col}, to df."
         )
         df[new_col] = df[col] / df[by_col]
+
     return df
 
 
-def nan_categorize(
+def nan_dummies(
     df: pd.DataFrame,
     col: str,
     na_flag: Union[bool] = True,
@@ -85,7 +98,8 @@ def nan_categorize(
     :param na_flag: you can choose if you want to include NaN as a dummy
     :param prefix: Alias prefix for new column -> {prefix}_{col}
     """
-    df[f"{prefix}_{col}"] = pd.get_dummies(df[col], dummy_na=na_flag)
+    df = pd.concat([df, pd.get_dummies(df, dummy_na=na_flag, prefix=prefix)], axis=1)
+    df = df.drop(columns=col, axis=1)
     return df
 
 
@@ -104,7 +118,7 @@ class Transform(object):
         "log": log_transform,
         "multiply_by": multiply_by,
         "divide_by": divide_by,
-        "nan_categorize": nan_categorize,
+        "nan_dummies": nan_dummies,
         "geolocate": geolocate,
     }
 

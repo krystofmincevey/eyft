@@ -18,26 +18,26 @@ strings in a list. The names specified will have to match
 processing methods supported by the engine. Please specify what 
 preprocessing functions are supported below.
 
-- [ ] min\_max_scale
+- [X] min\_max_scale
 - [X] z_normalise
 - [X] mode\_impute
-- [ ] mean\_impute
-- [ ] median\_impute
-- [ ] cap
-- [ ] cap\_3std
-- [ ] floor
+- [X] mean\_impute
+- [X] median\_impute
+- [X] cap
+- [X] cap\_3std
+- [X] floor
 - [ ] categorize
 - [ ] pass (i.e. do\_nothing)
 
 **Testing progress**
-- [ ] min\_max_scale
+- [X] min\_max_scale
 - [X] z_normalise; TODO: resolve github issues
-- [ ] mode\_impute; TODO: Add a description.
-- [ ] mean\_impute
-- [ ] median\_impute
+- [X] mode\_impute; TODO: Add a description.
+- [X] mean\_impute
+- [X] median\_impute
 - [ ] categorize
-- [ ] cap
-- [ ] cap\_3std
-- [ ] floor
+- [X] cap
+- [X] cap\_3std
+- [X] floor
 - [ ] pass (i.e. do\_nothing)
 
