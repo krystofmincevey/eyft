@@ -3,7 +3,7 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 
 from eyft.pipelines.data_processing.processor import (
     mean_impute, mode_impute, median_impute, z_normalise, min_max_scale,
-    cap_3std, cap, floor, segment, floor_and_cap
+    cap_3std, cap, floor, segment, floor_and_cap, cat_dummies
 )
 
 
@@ -176,6 +176,7 @@ class TestFloorPerc(object):
         )
         assert_frame_equal(df_actual, df_expected, check_dtype=False)
 
+
 class TestCapAndFloor(object):
     def test_values_floor_and_cap(self, epc_input):
         df_actual = floor_and_cap(
@@ -184,17 +185,17 @@ class TestCapAndFloor(object):
         )['df']
 
         df_expected = pd.DataFrame(
-                data=[
-                    [3.25e+05, 3, None, 'Hendrik De Braekeleerlaan 68', 2.59e+02, 0, 1],
-                    [1.74e+05, 2, 2, 'Antwerpsesteenweg 50', 6.44e+02, 0, 1],
-                    [1.74e+05, 2, 3, 'Antwerpsesteenweg 5', 6.44e+02, 0, 1],
-                    [1.99e+05, 2, 2, 'Hoevelei 194', 2.06e+02, 0, 1],
-                    [2.39e+05, 2, 2, 'Leon Gilliotlaan 40', 2.29e+02, 0, -1],
-                    [2.85e+05, 3, None, 'De Cranelei 9', 4.40e+01, 0, -1],
-                    [3.69e+05, 1, 2, 'Kapellestraat 159', 0.00e+00, 0, -1],
-                    [3.69e+05, 1, 3, 'Kapellestraat 159 B', 0.00e+00, 0, -1]
-                ],
-                columns=['Price', 'Bedrooms', 'Facades', 'Street','EPC', 'Zeros', 'Ones']
+            data=[
+                [3.25e+05, 3, None, 'Hendrik De Braekeleerlaan 68', 2.59e+02, 0, 1],
+                [1.74e+05, 2, 2, 'Antwerpsesteenweg 50', 6.44e+02, 0, 1],
+                [1.74e+05, 2, 3, 'Antwerpsesteenweg 5', 6.44e+02, 0, 1],
+                [1.99e+05, 2, 2, 'Hoevelei 194', 2.06e+02, 0, 1],
+                [2.39e+05, 2, 2, 'Leon Gilliotlaan 40', 2.29e+02, 0, -1],
+                [2.85e+05, 3, None, 'De Cranelei 9', 4.40e+01, 0, -1],
+                [3.69e+05, 1, 2, 'Kapellestraat 159', 0.00e+00, 0, -1],
+                [3.69e+05, 1, 3, 'Kapellestraat 159 B', 0.00e+00, 0, -1]
+            ],
+            columns=['Price', 'Bedrooms', 'Facades', 'Street', 'EPC', 'Zeros', 'Ones']
         )
         assert_frame_equal(df_actual, df_expected, check_dtype=False)
 
@@ -207,3 +208,21 @@ class TestCategorize(object):
         assert_series_equal(df_actual, df_expected, check_dtype=False)
 
 
+class TestCatDummies(object):
+    def test_cat_dummies(self, epc_input):
+        df_actual = cat_dummies(df=epc_input, col='Facades')
+
+        df_expected = pd.DataFrame(
+            data=[
+                [3.25e+05, 3, None, 'Hendrik De Braekeleerlaan 68', 2.59e+02, 0, 1, 1],
+                [1.74e+05, 2, 2, 'Antwerpsesteenweg 50', 6.44e+02, 0, 1, 0],
+                [1.74e+05, 2, 3, 'Antwerpsesteenweg 5', 6.44e+02, 0, 1, 0],
+                [1.99e+05, 2, 2, 'Hoevelei 194', 2.06e+02, 0, 1, 0],
+                [2.39e+05, 2, 2, 'Leon Gilliotlaan 40', 2.29e+02, 0, -1, 0],
+                [2.85e+05, 3, None, 'De Cranelei 9', 4.40e+01, 0, -1, 1],
+                [3.69e+05, 1, 2, 'Kapellestraat 159', 0.00e+00, 0, -1, 0],
+                [3.69e+05, 1, 3, 'Kapellestraat 159 B', 0.00e+00, 0, -1, 0]
+            ],
+            columns=['Price', 'Bedrooms', 'Facades', 'Street', 'EPC', 'Zeros', 'Ones', 'no_Facades']
+        )
+        assert_frame_equal(df_actual, df_expected, check_dtype=False)

@@ -248,8 +248,6 @@ def floor_and_cap(
     df[col] = np.where(df[col] < abs_floor, abs_floor, df[col])
     df[col] = np.where(df[col] > abs_cap, abs_cap, df[col])
 
-    # TODO: Arthur
-
     return {
         "df": df, "col": col,
         "prc_floor": prc_floor, "abs_floor": abs_floor,
@@ -287,7 +285,7 @@ def segment(
 def cat_dummies(
     df: pd.DataFrame,
     col: str,
-    prefix: str = ''
+    prefix: str = 'no'
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
     """
     Function for tracking presence of nans (missing values).
@@ -301,8 +299,7 @@ def cat_dummies(
     else:
         new_col = col
 
-    # TODO: Arthur
-
+    df[new_col] = pd.get_dummies(df[col], columns=None, dummy_na=True, dtype=int)
     return {"df": df, "col": col, "prefix": prefix}
 
 
@@ -335,7 +332,7 @@ def categorize(
         vals_e: [0, 0, 0, 0, 0]
     """
 
-    # TODO: Arthur
+    df[col] = pd.get_dummies(df, columns=col, dtype=int)
 
     return {"df": df, "col": col, "cats": cats}
 
