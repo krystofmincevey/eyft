@@ -3,7 +3,7 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 import numpy as np
 
 from eyft.pipelines.feature_engineering.transform import (
-    Transform, log_transform
+    Transform, log_transform, inverse
 )
 
 
@@ -54,5 +54,24 @@ class TestLogTransform(object):
             columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'log_Price']
         )
 
-        assert_frame_equal(df_actual['df'], df_expected, check_dtype=False)
+        assert_frame_equal(df_actual, df_expected, check_dtype=False)
 
+
+class TestInverse(object):
+    def test_inverse(self, processed_inputs):
+        df_actual = inverse(df=processed_inputs, col='Bedrooms')
+
+        df_expected = pd.DataFrame(
+            data=[
+                [300, 3, 2, 2.59e+02, 1/3],
+                [200, 2, 2, 6.44e+02, 1/2],
+                [400, 2, 4, 6.44e+02, 1/2],
+                [50, 2, 2, 2.06e+02, 1/2],
+                [500, 2, 1, 2.29e+02, 1/2],
+                [300, 3, 2, 4.40e+01, 1/3],
+                [1000, 1, 2, 0.00e+00, 1/1],
+                [2000, 1, 4, 0.00e+00, 1/1],
+            ],
+            columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'inverse_Price']
+        )
+        assert_frame_equal(df_actual, df_expected, check_dtype=False)

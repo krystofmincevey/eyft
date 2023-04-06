@@ -90,14 +90,18 @@ def inverse(
         col: str,
         prefix: str = 'inverse',
         **kwargs,
-):
+) -> pd.DataFrame:
     """
     Performs 1/col and saves in new_col = {prefix}_{col}
     use log function as guide.
     """
-
-    # TODO: Arthur
-
+    one_col = 1
+    new_col = f"{prefix}_{col}"
+    if new_col not in df.columns:
+        logger.info(
+            f"Adding new column: {new_col}, to df."
+        )
+    df[new_col] = one_col / df[col]
     return df
 
 
