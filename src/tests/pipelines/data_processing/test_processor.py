@@ -7,7 +7,7 @@ from eyft.pipelines.data_processing.processor import (
 )
 
 
-class TestCap3std(object):
+class TestCap3STD(object):
 
     def test_values(self, epc_input_2):
         df_actual = cap_3std(epc_input_2, col='Bedrooms', mean=1, stdev=1)['df']
@@ -22,8 +22,7 @@ class TestCap3std(object):
                 [2.85e+05, 1, None, 'De Cranelei 9', 4.40e+01, 0, -1],
                 [3.69e+05, 1, 2, 'Kapellestraat 159', 0.00e+00, 0, -1],
                 [3.69e+05, 0, 3, 'Kapellestraat 159 B', 0.00e+00, 0, -1],
-            ]
-            ,
+            ],
             columns=['Price', 'Bedrooms', 'Facades', 'Street', 'EPC', 'Zeros', 'Ones']
         )
 
@@ -227,9 +226,9 @@ class TestCapAndFloor(object):
 class TestCategorize(object):
 
     def test_categorize(self, epc_input):
-        df_actual = segment(df=epc_input, col='Price', bins=[0, 2 * 100000, 4 * 100000], labels=["a", "b"])['df']
+        df_actual = segment(
+            df=epc_input, col='Price', bins=[0, 2 * 100000, 4 * 100000], labels=["a", "b"]
+        )['df']
         df_actual = pd.Series(df_actual['Price'].tolist(), name='Price')
         df_expected = pd.Series(['b', 'a', 'a', 'a', 'b', 'b', 'b', 'b'], name='Price')
         assert_series_equal(df_actual, df_expected, check_dtype=False)
-
-

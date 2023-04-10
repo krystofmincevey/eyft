@@ -101,8 +101,14 @@ def z_normalise(
     if stdev is None:
         stdev = df[col].std(ddof=0)
         logger.info(f'StDev of {col} is {stdev}.')
+
     if stdev != 0:
         df[col] = (df[col] - mean) / stdev
+    else:
+        logger.warning(
+            f"The STDEV of {col} is zero, hence cannot "
+            f"to {z_normalise.__name__}."
+        )
 
     return {"df": df, "col": col, "mean": mean, "stdev": stdev}
 
@@ -127,8 +133,15 @@ def min_max_scale(
     if max_val is None:
         max_val = df[col].max()
         logger.info(f'min of {col} is {max_val}.')
+
     if max_val - min_val != 0:
         df[col] = (df[col] - min_val) / (max_val - min_val)
+    else:
+        logger.warning(
+            f"The Min and Max of {col} are equal, hence cannot "
+            f"to {min_max_scale.__name__}."
+        )
+
     return {"df": df, "col": col, "min_val": min_val, "max_val": max_val}
 
 
@@ -156,7 +169,6 @@ def cap_3std(
     return {"df": df, "col": col, "stdev": stdev}
 
 
-# TODO: Arthur - please modify test to take into account new variables
 def cap(
     df: pd.DataFrame,
     col: str,
@@ -185,7 +197,6 @@ def cap(
     return{"df": df, "col": col, "prc_cap": prc_cap, "abs_cap": abs_cap}
 
 
-# TODO: Arthur - please modify test to take into account new variables
 def floor(
     df: pd.DataFrame,
     col: str,
@@ -269,7 +280,6 @@ def segment(
     :param col: you can choose the column that you want to categorize
     :param bins: numerical limits of the bins for the categories
     :param labels: specifies the labels for the returned bins.
-        Must be the same length as the resulting bins.
     :param prefix: Alias prefix for new column -> {prefix}_{col}
     """
     if bins is None:
