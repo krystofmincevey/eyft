@@ -18,26 +18,38 @@ strings in a list. The names specified will have to match
 processing methods supported by the engine. Please specify what 
 preprocessing functions are supported below.
 
-- [X] min\_max_scale
+- [ ] boxcox_normalise
+- [X] cap
+- [X] cap_3std
+- [ ] cat_dummies
+- [ ] categorize
+- [X] pass (i.e. select without processing)
+- [X] floor
+- [X] floor_and_cap
+- [X] mean_impute
+- [X] median_impute
+- [X] min_max_scale
+- [X] mode_impute
+- [X] segment
 - [X] z_normalise
-- [X] mode\_impute
-- [X] mean\_impute
-- [X] median\_impute
-- [X] cap
-- [X] cap\_3std
-- [X] floor
-- [ ] segment
-- [ ] pass (i.e. do\_nothing)
 
-**Testing progress**
-- [X] min\_max_scale
-- [X] z_normalise; TODO: resolve github issues
-- [X] mode\_impute; TODO: Add a description.
-- [X] mean\_impute
-- [X] median\_impute
-- [ ] segment
-- [X] cap
-- [X] cap\_3std
-- [X] floor
-- [ ] pass (i.e. do\_nothing)
+
+**To obtain a list of all implemented functions** simply execute the 
+following code in the python console:
+    
+    import inspect
+    
+    # Import the module
+    from src.eyft.pipelines.data_processing import processor as mymodule
+    
+    # Get a list of all names defined in the module
+    names = dir(mymodule)
+    
+    # Iterate over the names and check if each is a function
+    for name in names:
+        # Get the object for the name
+        obj = getattr(mymodule, name)
+        # Check if the object is a function
+        if inspect.isfunction(obj):
+            print(name)
 

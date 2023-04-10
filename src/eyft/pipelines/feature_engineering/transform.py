@@ -6,8 +6,6 @@ from typing import (
     Dict, List, Union, Tuple
 )
 
-from pandas import DataFrame
-
 from ..feature_engineering import logger
 
 
@@ -86,17 +84,16 @@ def divide_by(
 
 
 def inverse(
-        df: pd.DataFrame,
-        col: str,
-        prefix: str = 'inverse',
-        **kwargs,
+    df: pd.DataFrame,
+    col: str,
+    prefix: str = 'inverse',
+    **kwargs,
 ):
     """
-    Performs 1/col and saves in new_col = {prefix}_{col}
-    use log function as guide.
+    Performs 1/col and saves in new_col = {prefix}_{col}.
     """
 
-    # TODO: Arthur
+    # TODO: Arthur - use log function as guide
 
     return df
 
@@ -155,6 +152,7 @@ class Transform(object):
         "log": log_transform,
         "multiply_by": multiply_by,
         "multiply_all": multiply_all,
+        "sum_all": sum_all,
         "divide_by": divide_by,
         "geolocate": geolocate,
     }

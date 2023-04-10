@@ -8,7 +8,7 @@ def left_merge_input():
     data = [
         ['a', 10],
         ['b', 20],
-        [None, 30]
+        [None, 30],
     ]
     columns = ['Key', 'Price']
 
@@ -21,7 +21,7 @@ def right_merge_input():
     data = [
         ['a', 1],
         ['c', 2],
-        [None, 3]
+        [None, 3],
     ]
     columns = ['Key', 'EPC']
 

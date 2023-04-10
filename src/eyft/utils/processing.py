@@ -45,7 +45,7 @@ def merge(
     # Handle Inputs -----------------------------------
     if merge_type not in ["inner", "left"]:
         raise ValueError(
-            f"{merge_data.__name__} only supports "
+            f"{merge.__name__} only supports "
             f"inner and left joins not {merge_type}."
         )
 
@@ -54,7 +54,7 @@ def merge(
         columns.remove(right_key)
 
     # REMOVE NAN ROWS IN PRIMARY KEY TO SPEED UP JOIN
-    df_right[right_key] = [~df_right[right_key].isna()]
+    df_right = df_right[~df_right[right_key].isna()]
     # -------------------------------------------------
 
     for col in columns.copy():
@@ -189,4 +189,3 @@ def explore(
             pass
 
     plt.show()
-

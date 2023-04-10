@@ -5,6 +5,7 @@ from typing import (
     Union, Tuple, Any, Dict, List, Callable
 )
 from collections import defaultdict
+from scipy import stats
 
 from ..data_processing import logger
 
@@ -18,6 +19,24 @@ from ..data_processing import logger
 #   and potentially remove return statements.
 
 
+def _get_mos(
+    min_val: Union[int, float],
+    max_val: Union[int, float],
+    adj: float = 0.005  # 0.5%
+) -> Union[int, float]:
+    """
+    Return margin of safety (MOS):
+    adj * range
+    """
+    if min_val < 0 and max_val < 0:
+        _range = abs(min_val) - abs(max_val)
+    elif min_val < 0:
+        _range = max_val + abs(min_val)
+    else:
+        _range = max_val - min_val
+
+    return _range * adj
+
 def do_nothing(
     df: Any,
     *args,  # To handle additional inputs passed to funct.
@@ -26,6 +45,7 @@ def do_nothing(
     return {"df": df}
 
 
+# Impute ------------------------------------------------------
 def mean_impute(
     df: pd.DataFrame,
     col: str,
@@ -38,9 +58,10 @@ def mean_impute(
     """
     if mean is None:
         mean = float(df[col].mean())
-        logger.info(f'Mean of {col} is {mean}.')
 
+    logger.info(f'Imputing NANs in {col} with mean: {mean}.')
     df[col] = df[col].fillna(mean)
+
     return {"df": df, "col": col, "mean": mean}
 
 
@@ -56,8 +77,8 @@ def mode_impute(
     """
     if mode is None:
         mode = float(df[col].mode())
-        logger.info(f'Mode of {col} is {mode}.')
 
+    logger.info(f'Imputing NANs in {col} with mode: mode.')
     df[col] = df[col].fillna(mode)
     return {"df": df, "col": col, "mode": mode}
 
@@ -74,12 +95,14 @@ def median_impute(
     """
     if median is None:
         median = float(df[col].median())
-        logger.info(f'Median of {col} is {median}.')
 
+    logger.info(f'Imputing NANs in {col} with median: {median}.')
     df[col] = df[col].fillna(median)
     return {"df": df, "col": col, "median": median}
+# -------------------------------------------------------
 
 
+# Scale -------------------------------------------------
 def z_normalise(
     df: pd.DataFrame,
     col: str,
@@ -97,20 +120,47 @@ def z_normalise(
     """
     if mean is None:
         mean = df[col].mean()
-        logger.info(f'Mean of {col} is {mean}.')
     if stdev is None:
         stdev = df[col].std(ddof=0)
-        logger.info(f'StDev of {col} is {stdev}.')
 
     if stdev != 0:
+        logger.info(
+            f'Z Normalising {col} with mean: {mean} and stdev: {stdev}.'
+        )
         df[col] = (df[col] - mean) / stdev
     else:
         logger.warning(
             f"The STDEV of {col} is zero, hence cannot "
-            f"to {z_normalise.__name__}."
+            f"perform {z_normalise.__name__}."
         )
 
     return {"df": df, "col": col, "mean": mean, "stdev": stdev}
+
+
+def boxcox_normalise(
+    df: pd.DataFrame,
+    col: str,
+    normaliser: Union[int, float] = None
+) -> pd.DataFrame:
+    """
+    Return a dataset transformed by a Box-Cox power transformation.
+    Normaliser: used to ensure that all vals are > 0 in df.col.
+    """
+
+    if normaliser is None:
+        min_val = df[col].min()
+        max_val = df[col].max()
+
+        normaliser = max(
+            _get_mos(min_val=min_val, max_val=max_val), 1
+        )  # margin_of_safety
+        if min_val <= 0:
+            normaliser += abs(min_val)
+
+    logger.info(f'Applying Box-Cox transformation to {col}.')
+    tf_vals, _ = stats.boxcox(df[col].values + normaliser)
+    df[col] = tf_vals
+    return df
 
 
 def min_max_scale(
@@ -129,12 +179,13 @@ def min_max_scale(
     """
     if min_val is None:
         min_val = df[col].min()
-        logger.info(f'Min of {col} is {min_val}.')
     if max_val is None:
         max_val = df[col].max()
-        logger.info(f'min of {col} is {max_val}.')
 
     if max_val - min_val != 0:
+        logger.info(
+            f'Min-Max scale {col} with min: {min_val} and max: {max_val}.'
+        )
         df[col] = (df[col] - min_val) / (max_val - min_val)
     else:
         logger.warning(
@@ -143,8 +194,10 @@ def min_max_scale(
         )
 
     return {"df": df, "col": col, "min_val": min_val, "max_val": max_val}
+# ---------------------------------------------------------
 
 
+# Handle Outliers -----------------------------------------
 def cap_3std(
     df: pd.DataFrame,
     col: str,
@@ -160,10 +213,13 @@ def cap_3std(
     """
     if mean is None:
         mean = df[col].mean()
-        logger.info(f'mean of {col} is {mean}.')
     if stdev is None:
         stdev = df[col].std()
-        logger.info(f'StDev of {col} is {stdev}.')
+
+    logger.info(
+        f'Cap values larger and smaller than 3stdev in {col} |'
+        f' mean: {mean} and stdev: {stdev}.'
+    )
     df[col] = np.where(df[col] < mean - 3 * stdev, mean - 3 * stdev, df[col])
     df[col] = np.where(df[col] > mean + 3 * stdev, mean + 3 * stdev, df[col])
     return {"df": df, "col": col, "stdev": stdev}
@@ -191,8 +247,11 @@ def cap(
             )
         else:
             abs_cap = df[col].quantile(prc_cap)
-            logger.info(f"Capping values above {prc_cap}prc ({abs_cap}).")
+            logger.info(f"Capping values above {prc_cap}prc.")
 
+    logger.info(
+        f'Cap values larger than {abs_cap} in {col}.'
+    )
     df[col] = np.where(df[col] > abs_cap, abs_cap, df[col])
     return{"df": df, "col": col, "prc_cap": prc_cap, "abs_cap": abs_cap}
 
@@ -219,8 +278,11 @@ def floor(
             )
         else:
             abs_floor = df[col].quantile(prc_floor)
-            logger.info(f"Flooring values below {prc_floor}prc ({abs_floor}).")
+            logger.info(f"Flooring values below {prc_floor}prc.")
 
+    logger.info(
+        f'Floor values smaller than {abs_floor} in {col}.'
+    )
     df[col] = np.where(df[col] < abs_floor, abs_floor, df[col])
     return{"df": df, "col": col, "prc_floor": prc_floor, "abs_floor": abs_floor}
 
@@ -246,7 +308,7 @@ def floor_and_cap(
             )
         else:
             abs_floor = df[col].quantile(prc_floor)
-            logger.info(f"Flooring values below {prc_floor}prc ({abs_floor}).")
+            logger.info(f"Flooring values below {prc_floor}prc.")
 
     if abs_cap is None:
 
@@ -256,8 +318,12 @@ def floor_and_cap(
             )
         else:
             abs_cap = df[col].quantile(prc_cap)
-            logger.info(f"Capping values above {prc_cap}prc ({abs_cap}).")
+            logger.info(f"Capping values above {prc_cap}prc.")
 
+    logger.info(
+        f'Floor values smaller than {abs_floor} and '
+        f'cap values larger than {abs_cap} in {col}.'
+    )
     df[col] = np.where(df[col] < abs_floor, abs_floor, df[col])
     df[col] = np.where(df[col] > abs_cap, abs_cap, df[col])
 
@@ -266,8 +332,10 @@ def floor_and_cap(
         "prc_floor": prc_floor, "abs_floor": abs_floor,
         "prc_cap": prc_cap, "abs_cap": abs_cap,
     }
+# -------------------------------------------------------
 
 
+# Bucket/Categorize -------------------------------------
 def segment(
     df: pd.DataFrame,
     col: str,
@@ -283,7 +351,14 @@ def segment(
     :param prefix: Alias prefix for new column -> {prefix}_{col}
     """
     if bins is None:
-        bins = np.histogram_bin_edges(df[col], bins="auto")
+        min_val = np.abs(df[col].min())
+        max_val = np.abs(df[col].max())
+        margin_of_safety = _get_mos(min_val=min_val, max_val=max_val)
+
+        bins = np.histogram_bin_edges(
+            df[col], bins="auto",
+            range=(min_val - margin_of_safety, max_val + margin_of_safety)
+        )
 
     if prefix:
         new_col = f"{prefix}_{col}"
@@ -294,6 +369,8 @@ def segment(
     return{"df": df, "col": col, "bins": bins, "prefix": prefix}
 
 
+# PLACED IN PROCESSING.PY AS THIS STEP
+# WILL NEED TO BE IMPLEMENTED BEFORE IMPUTING.
 def cat_dummies(
     df: pd.DataFrame,
     col: str,
@@ -348,21 +425,27 @@ def categorize(
     # TODO: Arthur
 
     return {"df": df, "col": col, "cats": cats}
+# --------------------------------------------------
 
 
 # -------------------------------------
 class Processor(object):
 
     MAPPER = {
-        "mean_impute": mean_impute,
-        "mode_impute": mode_impute,
-        "median_impute": median_impute,
-        "z_normalise": z_normalise,
-        "categorize": segment,
-        "cap_3std": cap_3std,
-        "floor": floor,
-        "cap": cap,
-        "pass": do_nothing,
+        'boxcox_normalise': boxcox_normalise,
+        'cap': cap,
+        'cap_3std': cap_3std,
+        'cat_dummies': cat_dummies,
+        'categorize': categorize,
+        'pass': do_nothing,
+        'floor': floor,
+        'floor_and_cap': floor_and_cap,
+        'mean_impute': mean_impute,
+        'median_impute': median_impute,
+        'min_max_scale': min_max_scale,
+        'mode_impute': mode_impute,
+        'segment': segment,
+        'z_normalise': z_normalise,
     }
 
     def __init__(
