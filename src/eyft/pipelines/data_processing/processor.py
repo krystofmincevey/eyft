@@ -389,7 +389,6 @@ def cat_dummies(
     else:
         new_col = col
 
-    df[new_col] = pd.get_dummies(df[col], columns=None, dummy_na=True, dtype=int)
     return {"df": df, "col": col, "prefix": prefix}
 
 
@@ -422,7 +421,7 @@ def categorize(
         vals_e: [0, 0, 0, 0, 0]
     """
 
-    df[col] = pd.get_dummies(df, columns=col, dtype=int)
+    df[col] = pd.get_dummies(df[col], columns=col, dtype=int)
 
     return {"df": df, "col": col, "cats": cats}
 # --------------------------------------------------
