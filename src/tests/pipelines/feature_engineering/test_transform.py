@@ -72,6 +72,6 @@ class TestInverse(object):
                 [1000, 1, 2, 0.00e+00, 1/1],
                 [2000, 1, 4, 0.00e+00, 1/1],
             ],
-            columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'inverse_Price']
+            columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'inversePrice']
         )
         assert_frame_equal(df_actual, df_expected, check_dtype=False)

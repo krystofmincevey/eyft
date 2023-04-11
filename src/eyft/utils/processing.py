@@ -1,9 +1,10 @@
+import re
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from typing import List
+from typing import List, Dict, Union
 from scipy import stats
 
 from ..utils import logger
@@ -13,25 +14,23 @@ from ..utils import logger
 #   and potentially remove return statements.
 
 
-def remove_spaces(
-    df: pd.DataFrame,
-    col: str,
-) -> pd.DataFrame:
-    """
-    :param df: dataset we use
-    :param col: you can choose which column you want to clean
-    :return: self (i.e. pd.Dataframe changed in place)
-    """
-    df[col] = df[col].str.re.replace(" +", " ").str.trim()
-    return df
+def process_str(
+    txt: str,
+    mapping: Dict[str, str]
+) -> str:
+
+    for key, val in mapping.items():
+        txt = txt.replace(key, val)
+    txt = re.sub(" +", " ", txt).strip()
+    return txt
 
 
-def merge_data(
+def merge(
     df_left: pd.DataFrame,
     df_right: pd.DataFrame,
     left_key: str,
     right_key: str,
-    columns: list,
+    columns: list = None,
     merge_type: str = "left",
 ) -> pd.DataFrame:
     """
@@ -39,17 +38,33 @@ def merge_data(
     :param df_right: dataset used to add information to the left dataset
     :param left_key: field used for the matching in the target table
     :param right_key: field used for the matching in the right table
-    :param columns: columns from the right table we want to add in the left table
+    :param columns: columns from the right table we want to add into the left table
     :param merge_type: what type of join you want to do
     """
-    for col in columns:
+
+    # Handle Inputs -----------------------------------
+    if merge_type not in ["inner", "left"]:
+        raise ValueError(
+            f"{merge.__name__} only supports "
+            f"inner and left joins not {merge_type}."
+        )
+
+    if columns is None:
+        columns = list(df_right.columns)
+        columns.remove(right_key)
+
+    # REMOVE NAN ROWS IN PRIMARY KEY TO SPEED UP JOIN
+    df_right = df_right[~df_right[right_key].isna()]
+    # -------------------------------------------------
+
+    for col in columns.copy():
         if col in df_left.columns:
+            columns.remove(col)
             logger.warning(
                 f"{col} already in df_left and "
                 f"hence not joined."
             )
-
-    df_right = df_right[right_key, *columns]
+    df_right = df_right[[*columns, right_key]]
 
     df = df_left.merge(
         df_right,
@@ -57,20 +72,15 @@ def merge_data(
         right_on=right_key,
         how=merge_type
     )
+
+    # Sanity check ------------------------------------
+    if merge_type == 'left' and df.shape[0] != df_left.shape[0]:
+        logger.warning(
+            f"Left join expanded the size (nrows) of the"
+            f"dataframe from {df_left.shape[0]} to {df.shape[0]}."
+        )
+    # ------------------------------------------------
     return df
-
-
-# TODO: Not finished
-def sum_statistics(
-    df: pd.DataFrame,
-    col: str,
-):
-    """
-    :param df: dataset we use
-    :param col: you can choose the column where you want to know the summary statistics from
-    :return: the summary statistics of the chosen column
-    """
-    df[col] = df[col].describe
 
 
 def boxplot(
@@ -91,8 +101,8 @@ def boxplot(
 def histogram(
     df: pd.DataFrame,
     col: str,
-    bins: List[float, int] = None,
-) -> List[float, int]:
+    bins: List[Union[float, int]] = None,
+) -> List[Union[float, int]]:
     """
     :param df: dataset we use
     :param col: you can choose the column you want to use to calculate the histogram
@@ -107,30 +117,10 @@ def histogram(
     return bins
 
 
-def remove_symbols(
-    df: pd.DataFrame,
-    col: str,
-    list_symbols: list,
-    cleaning_list: list,
-) -> pd.DataFrame:
-    """
-    :param df: dataset we use
-    :param col: you can choose the column you want to clean
-    :param list_symbols: symbols you want to remove
-    :param cleaning_list: what value needs to be put
-        instead of the removed symbol
-    """
-    if len(list_symbols) != len(cleaning_list):
-        raise "List of symbols length do not match with the cleaning values length"
-    for symbol, clean_symbol in zip(list_symbols, cleaning_list):
-        df[col] = df[col].str.replace(symbol, clean_symbol)
-    return df
-
-
 def normalise(df: pd.DataFrame, cols: list, is_plot=False):
     """
     Transform continuous covariates that are not
-    gaussian.
+    gaussian to be more normal.
     """
     for col in cols:
         stat, p = stats.shapiro(df[col].values)
@@ -199,6 +189,3 @@ def explore(
             pass
 
     plt.show()
-
-
-

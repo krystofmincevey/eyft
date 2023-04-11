@@ -3,14 +3,26 @@ import pandas as pd
 
 
 @pytest.fixture
-def inputs():
+def left_merge_input():
 
     data = [
-        [3.25e+05, 3, None, 'Hendrik De Braekeleerlaan 68', 2.59e+02],
-        [1.74e+05, 2, 2, 'Antwerpsesteenweg 50', 6.44e+02],
-        [1.74e+05, 2, 4, 'Antwerpsesteenweg 5', 6.44e+02],
-        [1.99e+05, 2, 2, 'Hoevelei 194', 2.06e+02],
+        ['a', 10],
+        ['b', 20],
+        [None, 30],
     ]
-    columns = ['Price', 'Bedrooms', 'Facades', 'Street', 'EPC']
+    columns = ['Key', 'Price']
+
+    return pd.DataFrame(data, columns=columns)
+
+
+@pytest.fixture
+def right_merge_input():
+
+    data = [
+        ['a', 1],
+        ['c', 2],
+        [None, 3],
+    ]
+    columns = ['Key', 'EPC']
 
     return pd.DataFrame(data, columns=columns)

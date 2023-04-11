@@ -2,24 +2,24 @@ import pytest
 import pandas as pd
 
 
-@pytest.fixture
-def processed_inputs():
-
-    data = [
-        [1, 0.9, 0, ...],
-        [1, 0.9, -10, ...],
-        [0, 0.001, 100, ...],
-        [-1, -1.1, 30, ...],
-        [],
-        [],
-        [],
-    ]
-    columns = [
-        'Price',  # y_col
-        'COL1', 'COL2', 'COL3', "COL4", "COL5", "COL6", "COL7"
-    ]
-
-    return pd.DataFrame(data, columns=columns)
+# @pytest.fixture
+# def fs_inputs():
+#
+#     data = [
+#         [1, 0.9, 0, ...],
+#         [1, 0.9, -10, ...],
+#         [0, 0.001, 100, ...],
+#         [-1, -1.1, 30, ...],
+#         [],
+#         [],
+#         [],
+#     ]
+#     columns = [
+#         'Price',  # y_col
+#         'COL1', 'COL2', 'COL3', "COL4", "COL5", "COL6", "COL7"
+#     ]
+#
+#     return pd.DataFrame(data, columns=columns)
 
 # TESTING PRINCIPLES
 # y = mx1 + m2x2 + c + error

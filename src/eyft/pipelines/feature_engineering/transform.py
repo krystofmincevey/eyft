@@ -6,8 +6,6 @@ from typing import (
     Dict, List, Union, Tuple
 )
 
-from pandas import DataFrame
-
 from ..feature_engineering import logger
 
 
@@ -23,7 +21,7 @@ def log_transform(
     new_col = f"{prefix}_{col}"
     if new_col not in df.columns:
         logger.info(
-            f"Adding new column: {new_col}, to df."
+            f"Adding new column: {new_col} = log({col}), to df."
         )
         df[new_col] = np.log(df[col])
     return df
@@ -46,7 +44,7 @@ def multiply_by(
     new_col = f"{col}_{connector}_{by_col}"
     if new_col not in df.columns:
         logger.info(
-            f"Adding new column: {new_col}, to df."
+            f"Adding new column: {new_col} = {col} x {by_col}, to df."
         )
         df[new_col] = df[col] * df[by_col]
     return df
@@ -78,7 +76,7 @@ def divide_by(
     new_col = f"{col}_{connector}_{by_col}"
     if new_col not in df.columns:
         logger.info(
-            f"Adding new column: {new_col}, to df."
+            f"Adding new column: {new_col} = {col}/{by_col}, to df."
         )
         df[new_col] = df[col] / df[by_col]
 
@@ -92,16 +90,15 @@ def inverse(
         **kwargs,
 ) -> pd.DataFrame:
     """
-    Performs 1/col and saves in new_col = {prefix}_{col}
-    use log function as guide.
+    Performs 1/col and saves in new_col = {prefix}_{col}.
     """
-    one_col = 1
+
     new_col = f"{prefix}_{col}"
     if new_col not in df.columns:
         logger.info(
             f"Adding new column: {new_col}, to df."
         )
-    df[new_col] = one_col / df[col]
+    df[new_col] = df.join(df[col], (1/df).add_prefix('inverse'))
     return df
 
 
@@ -119,7 +116,19 @@ def multiply_all(
     store in {col}_{suffix}
     """
 
-    # TODO: Arthur
+    # GET COLS CONTAINING COL KEYWORD
+    prod_cols = []
+    for _col in df.columns:
+        if col in _col:
+            prod_cols.append(_col)
+    # -------------------------------
+
+    new_col = f"{col}_{suffix}"
+    if new_col not in df.columns:
+        logger.info(
+            f"Adding new column: {new_col} = {' x '.join(prod_cols)}, to df."
+        )
+        df[new_col] = df.loc[:, prod_cols].prod(axis=1)
 
     return df
 
@@ -138,7 +147,19 @@ def sum_all(
     store in {col}_{suffix}
     """
 
-    # TODO: Arthur
+    # GET COLS CONTAINING COL KEYWORD
+    sum_cols = []
+    for _col in df.columns:
+        if col in _col:
+            sum_cols.append(_col)
+    # -------------------------------
+
+    new_col = f"{col}_{suffix}"
+    if new_col not in df.columns:
+        logger.info(
+            f"Adding new column: {new_col} = {' + '.join(sum_cols)}, to df."
+        )
+        df[new_col] = df.loc[:, sum_cols].sum(axis=1)
 
     return df
 
@@ -159,6 +180,7 @@ class Transform(object):
         "log": log_transform,
         "multiply_by": multiply_by,
         "multiply_all": multiply_all,
+        "sum_all": sum_all,
         "divide_by": divide_by,
         "geolocate": geolocate,
     }
