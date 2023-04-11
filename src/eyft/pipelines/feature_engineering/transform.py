@@ -109,7 +109,7 @@ def multiply_all(
     **kwargs,  # added just to collect additional vars passed to funct
 ):
     """
-    Function to mutliply all columns
+    Function to multiply all columns
     that contain col in name.
     EG: if cols ['a', 'aa', 'bc', 'ab'] in df
     than if col = 'a' multiply 'a' x 'aa' x 'ab'.
@@ -136,7 +136,7 @@ def multiply_all(
 def sum_all(
     df: pd.DataFrame,
     col: str,
-    suffix: str = "mult_all",
+    suffix: str = "sum_all",
     **kwargs,  # added just to collect additional vars passed to funct
 ):
     """
