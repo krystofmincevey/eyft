@@ -59,19 +59,19 @@ class TestLogTransform(object):
 
 class TestInverse(object):
     def test_inverse(self, processed_inputs):
-        df_actual = inverse(df=processed_inputs, col='Bedrooms')
+        df_actual = inverse(df=processed_inputs, col='Facades')
 
         df_expected = pd.DataFrame(
             data=[
-                [300, 3, 2, 2.59e+02, 1/3],
-                [200, 2, 2, 6.44e+02, 1/2],
-                [400, 2, 4, 6.44e+02, 1/2],
-                [50, 2, 2, 2.06e+02, 1/2],
-                [500, 2, 1, 2.29e+02, 1/2],
-                [300, 3, 2, 4.40e+01, 1/3],
-                [1000, 1, 2, 0.00e+00, 1/1],
-                [2000, 1, 4, 0.00e+00, 1/1],
+                [300, 3, 2, 2.59e+02, 0.50],
+                [200, 2, 2, 6.44e+02, 0.50],
+                [400, 2, 4, 6.44e+02, 0.25],
+                [50, 2, 2, 2.06e+02, 0.50],
+                [500, 2, 1, 2.29e+02, 1],
+                [300, 3, 2, 4.40e+01, 0.50],
+                [1000, 1, 2, 0.00e+00, 0.50],
+                [2000, 1, 4, 0.00e+00, 0.25],
             ],
-            columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'inversePrice']
+            columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'inverse_Facades']
         )
         assert_frame_equal(df_actual, df_expected, check_dtype=False)

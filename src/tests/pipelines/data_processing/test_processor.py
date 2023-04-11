@@ -223,9 +223,9 @@ class TestCapAndFloor(object):
         assert_frame_equal(df_actual, df_expected, check_dtype=False)
 
 
-class TestCategorize(object):
+class TestSegment(object):
 
-    def test_categorize(self, epc_input):
+    def test_values(self, epc_input):
         df_actual = segment(
             df=epc_input, col='Price', bins=[0, 2 * 100000, 4 * 100000], labels=["a", "b"]
         )['df']

@@ -98,7 +98,7 @@ def inverse(
         logger.info(
             f"Adding new column: {new_col}, to df."
         )
-    df[new_col] = df.join(df[col], (1/df).add_prefix('inverse'))
+        df[new_col] = 1/df[col]
     return df
 
 
