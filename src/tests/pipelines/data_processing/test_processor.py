@@ -236,8 +236,8 @@ class TestSegment(object):
 
 class TestCatDummies(object):
     def test_cat_dummies(self, epc_input):
-        df_actual = cat_dummies(df=epc_input, col='Facades')
 
+        df_actual = cat_dummies(df=epc_input, col='Facades')
         df_expected = pd.DataFrame(
             data=[
                 [3.25e+05, 3, None, 'Hendrik De Braekeleerlaan 68', 2.59e+02, 0, 1, 1],
@@ -255,7 +255,7 @@ class TestCatDummies(object):
 
 class TestCategorize(object):
     def test_values(self, epc_input):
-        df_actual = categorize(df=epc_input, col='Bedrooms')
+        df_actual = categorize(df=epc_input, col='Bedrooms', cats=['Bdr'])
 
         df_expected = pd.DataFrame(
             data=[
