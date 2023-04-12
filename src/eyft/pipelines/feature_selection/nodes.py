@@ -219,6 +219,8 @@ def lasso(
 
 def pearson(
     df: pd.DataFrame,
+    col1: str,
+    col2: str,
     cutoff: float = 0.8,
 ) -> List[str]:
     """
@@ -231,6 +233,15 @@ def pearson(
 
     check correlations and only keep either 2x or x but not both!
     """
+
+    pearson = df[col1].corr(df[col2], method='pearson')
+
+    corr_matrix = df.corr()
+    upper = corr_matrix.where((np.triu(np.ones(corr_matrix.shape), k=1) +
+                               np.tril(np.ones(corr_matrix.shape), k=-1)).astype(bool))
+    to_drop = [column for column in upper.columns if any(upper[column] > 0.80)]
+    df.drop(to_drop, axis=1, inplace=True)
+
 
     # TODO: Arthur
 

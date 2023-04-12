@@ -423,9 +423,14 @@ def categorize(
         vals_d: [0, 0, 0, 1, 0]
         vals_e: [0, 0, 0, 0, 0]
     """
+    df[col] = df[col].cat.categories.tolist()
+    unique = df[col].unique()
+    unique.sort()
+    df[col] = pd.Series(df[col], dtype='category')
+    for col = df[col].unique()
 
-    df[col] = pd.get_dummies(df[col], columns=col, dtype=int)
-
+    np.where(df[col].unique)
+    np.where(df[col].cat.categories)
     return {"df": df, "col": col, "cats": cats}
 # --------------------------------------------------
 
