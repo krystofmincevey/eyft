@@ -23,9 +23,11 @@ numpy = "^1.24.2"
 pytest = "^7.2.2"
 statsmodels = "^0.13.5"
 xgboost = "^1.7.5"
+geopy = "^2.3.0"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"
+pip-system-certs = "^4.0"  # Used to instruct Python to use your Windows Certificate Store instead of the built-in store in the certifi package.
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

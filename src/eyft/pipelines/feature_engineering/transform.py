@@ -1,10 +1,12 @@
+import random
 import numpy as np
 import pandas as pd
-import geopandas
 
 from typing import (
     Dict, List, Union, Tuple
 )
+from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
 
 from ..feature_engineering import logger
 
@@ -161,12 +163,20 @@ def sum_all(
 
 
 def geolocate(
-    df: geopandas.GeoDataFrame,
-    col: Union[str, Tuple[str]],
+    df: pd.DataFrame,
+    col: Union[str, Tuple[str]] = "Address",
+    new_col: str = "Location",
     **kwargs,  # added just to collect additional vars passed to funct
 ) -> pd.DataFrame:
-    raise NotImplementedError
-    # return df
+
+    geolocator = Nominatim(
+        user_agent=f"eyft_{random.randint(1, 100)}",
+    )  # Links to openstreetmap api
+    # Applying the rate limiter wrapper to avoid overwhelming the servers
+    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+
+    df[new_col] = df[col].apply(lambda x: geocode(x, country_codes=['be', 'nl']))
+    return df
 # -------------------------------------
 
 
