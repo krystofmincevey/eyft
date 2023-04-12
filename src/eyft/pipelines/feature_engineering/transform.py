@@ -86,17 +86,21 @@ def divide_by(
 
 
 def inverse(
-    df: pd.DataFrame,
-    col: str,
-    prefix: str = 'inverse',
-    **kwargs,
-):
+        df: pd.DataFrame,
+        col: str,
+        prefix: str = 'inverse',
+        **kwargs,
+) -> pd.DataFrame:
     """
     Performs 1/col and saves in new_col = {prefix}_{col}.
     """
 
-    # TODO: Arthur - use log function as guide
-
+    new_col = f"{prefix}_{col}"
+    if new_col not in df.columns:
+        logger.info(
+            f"Adding new column: {new_col}, to df."
+        )
+        df[new_col] = 1/df[col]
     return df
 
 
@@ -107,7 +111,7 @@ def multiply_all(
     **kwargs,  # added just to collect additional vars passed to funct
 ):
     """
-    Function to mutliply all columns
+    Function to multiply all columns
     that contain col in name.
     EG: if cols ['a', 'aa', 'bc', 'ab'] in df
     than if col = 'a' multiply 'a' x 'aa' x 'ab'.
@@ -134,7 +138,7 @@ def multiply_all(
 def sum_all(
     df: pd.DataFrame,
     col: str,
-    suffix: str = "mult_all",
+    suffix: str = "sum_all",
     **kwargs,  # added just to collect additional vars passed to funct
 ):
     """

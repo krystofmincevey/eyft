@@ -37,6 +37,7 @@ def _get_mos(
 
     return _range * adj
 
+
 def do_nothing(
     df: Any,
     *args,  # To handle additional inputs passed to funct.
@@ -374,7 +375,7 @@ def segment(
 def cat_dummies(
     df: pd.DataFrame,
     col: str,
-    prefix: str = ''
+    prefix: str = 'no'
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
     """
     Function for tracking presence of nans (missing values).
@@ -387,8 +388,6 @@ def cat_dummies(
         new_col = f"{prefix}_{col}"
     else:
         new_col = col
-
-    # TODO: Arthur
 
     return {"df": df, "col": col, "prefix": prefix}
 
@@ -422,7 +421,7 @@ def categorize(
         vals_e: [0, 0, 0, 0, 0]
     """
 
-    # TODO: Arthur
+    df[col] = pd.get_dummies(df[col], columns=col, dtype=int)
 
     return {"df": df, "col": col, "cats": cats}
 # --------------------------------------------------

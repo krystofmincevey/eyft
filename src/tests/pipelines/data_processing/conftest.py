@@ -37,3 +37,5 @@ def epc_input_2():
     columns = ['Price', 'Bedrooms', 'Facades', 'Street', 'EPC', 'Zeros', 'Ones']
 
     return pd.DataFrame(data, columns=columns)
+
+

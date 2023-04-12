@@ -3,7 +3,7 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 import numpy as np
 
 from eyft.pipelines.feature_engineering.transform import (
-    Transform, log_transform
+    Transform, log_transform, inverse, multiply_all, sum_all
 )
 
 
@@ -56,3 +56,62 @@ class TestLogTransform(object):
 
         assert_frame_equal(df_actual, df_expected, check_dtype=False)
 
+
+class TestInverse(object):
+    def test_inverse(self, processed_inputs):
+        df_actual = inverse(df=processed_inputs, col='Facades')
+
+        df_expected = pd.DataFrame(
+            data=[
+                [300, 3, 2, 2.59e+02, 0.50],
+                [200, 2, 2, 6.44e+02, 0.50],
+                [400, 2, 4, 6.44e+02, 0.25],
+                [50, 2, 2, 2.06e+02, 0.50],
+                [500, 2, 1, 2.29e+02, 1],
+                [300, 3, 2, 4.40e+01, 0.50],
+                [1000, 1, 2, 0.00e+00, 0.50],
+                [2000, 1, 4, 0.00e+00, 0.25],
+            ],
+            columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'inverse_Facades']
+        )
+        assert_frame_equal(df_actual, df_expected, check_dtype=False)
+
+class TestMultiplyAll(object):
+
+    def test_multiply_all(self, processed_inputs):
+        df_actual = multiply_all(df=processed_inputs, col='Facades')
+
+        df_expected = pd.DataFrame(
+            data=[
+                [300, 3, 2, 2.59e+02, 2],
+                [200, 2, 2, 6.44e+02, 2],
+                [400, 2, 4, 6.44e+02, 4],
+                [50, 2, 2, 2.06e+02, 2],
+                [500, 2, 1, 2.29e+02, 1],
+                [300, 3, 2, 4.40e+01, 2],
+                [1000, 1, 2, 0.00e+00, 2],
+                [2000, 1, 4, 0.00e+00, 4],
+            ],
+            columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'Facades_mult_all']
+        )
+        assert_frame_equal(df_actual, df_expected, check_dtype=False)
+
+
+class TestSumAll(object):
+    def test_sum_all(self, processed_inputs):
+        df_actual = sum_all(df=processed_inputs, col='Facades')
+
+        df_expected = pd.DataFrame(
+            data=[
+                [300, 3, 2, 2.59e+02, 2],
+                [200, 2, 2, 6.44e+02, 2],
+                [400, 2, 4, 6.44e+02, 4],
+                [50, 2, 2, 2.06e+02, 2],
+                [500, 2, 1, 2.29e+02, 1],
+                [300, 3, 2, 4.40e+01, 2],
+                [1000, 1, 2, 0.00e+00, 2],
+                [2000, 1, 4, 0.00e+00, 4],
+            ],
+            columns=['Price', 'Bedrooms', 'Facades', 'EPC', 'Facades_sum_all']
+        )
+        assert_frame_equal(df_actual, df_expected, check_dtype=False)
