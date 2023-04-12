@@ -424,7 +424,7 @@ def categorize(
         vals_e: [0, 0, 0, 0, 0]
     """
 
-    df[new_col] = pd.get_dummies(df[col], columns=col, dtype=int)
+    df[col] = pd.get_dummies(df[col], columns=col, dtype=int)
 
     return {"df": df, "col": col, "cats": cats}
 # --------------------------------------------------
