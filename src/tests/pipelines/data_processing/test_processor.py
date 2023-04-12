@@ -259,8 +259,7 @@ class TestCatDummies(object):
 class TestCategorize(object):
 
     def test_values(self, epc_input):
-
-        df_actual = categorize(df=epc_input, col='Bedrooms')['df']
+        df_actual = categorize(df=epc_input, col='Bedrooms', cats=['Bdr'])['df']
 
         df_expected = pd.DataFrame(
             data=[

@@ -377,6 +377,7 @@ def cat_dummies(
     col: str,
     prefix: str = 'no'
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
+
     """
     Function for tracking presence of nans (missing values).
     A new column in df (with name new_col) should be created.
@@ -389,7 +390,9 @@ def cat_dummies(
     else:
         new_col = col
 
+    df[new_col] = np.where(df[col].isnull(), 1, 0)
     return {"df": df, "col": col, "prefix": prefix}
+
 
 
 def categorize(
