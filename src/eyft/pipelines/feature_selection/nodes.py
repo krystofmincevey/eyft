@@ -5,6 +5,9 @@ import statsmodels.api as sm
 
 from typing import List
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from sklearn.linear_model import Lasso, LogisticRegression
+from sklearn.metrics import mean_squared_error
+
 
 from ..feature_engineering import logger
 from ...utils.models import _seed
@@ -205,16 +208,20 @@ def random_forrest(
 
 def lasso(
         df: pd.DataFrame,
+        y: str,
+        X: str,
         cutoff: float,
 ) -> List[str]:
     """
     Keep weights that are larger than cutoff,
     using lasso regressions to determine weights.
     """
+    lasso_reg_model = Lasso(alpha=1.0).fit(X, y)
+    model_coef = lasso_reg_model.coef_
 
-    lasso(df, cutoff=)
+    y_pred = lasso.predict()
 
-    # TODO: Arthur
+
     raise NotImplementedError
     # return features
 
@@ -236,9 +243,13 @@ def pearson(
     corr_matrix = df.corr()
     upper = corr_matrix.where((np.triu(np.ones(corr_matrix.shape), k=1) +
                                np.tril(np.ones(corr_matrix.shape), k=-1)).astype(bool))
+
     to_drop = [column for column in upper.columns if any(upper[column] > 0.80)]
     df.drop(to_drop, axis=1, inplace=True)
 
+    collist = list(df.columns.values)
+    to_drop = [column for column in collist if any(upper[column] > 0.80)]
+    df.drop(to_drop, axis=1, inplace=True)
     raise NotImplementedError
     # return features
 
