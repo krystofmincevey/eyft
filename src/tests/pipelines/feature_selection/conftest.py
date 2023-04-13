@@ -1,25 +1,24 @@
 import pytest
 import pandas as pd
+from pandas.testing import assert_frame_equal, assert_series_equal
 
+@pytest.fixture
+def fs_inputs():
 
-# @pytest.fixture
- def fs_inputs():
-
-      data = [
+    data = [
           [1.4, 0.9, 0, 5, 70, 0, 20],
           [1.1, 0.9, -10, -5, 140, 10, 80],
           [0.9, 0.001, 100, 15, 60, 20, 45],
           [-1.01, -1.1, 30, -45, -90, 10, 5],
-          [-1.10, -1,5, 45, -55, 10, -5, 15],
-          [],
-          [1],
-     ]
-     columns = [
-         'Price',  # y_col
-        'COL1', 'COL2', 'COL3', "COL4", "COL5", "COL6", "COL7"
-     ]
+          [-1.10, -1.5, 45, -55, 10, -5, 15],
+          [0.08, 0.51, 5, 25, 40, -10, 60],
+          [-0.21, -0.45, -20, 35, 15, -20, 20],
+    ]
+    columns = ['COL1', 'COL2', 'COL3', 'COL4', 'COL5', 'COL6', 'COL7']
 
-     return pd.DataFrame(data, columns=columns)
+    return pd.DataFrame(data, columns=columns)
+
+
 
 # TESTING PRINCIPLES
 # y = mx1 + m2x2 + c + error
