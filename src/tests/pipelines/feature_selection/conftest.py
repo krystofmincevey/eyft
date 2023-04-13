@@ -3,23 +3,23 @@ import pandas as pd
 
 
 # @pytest.fixture
-# def fs_inputs():
-#
-#     data = [
-#         [1, 0.9, 0, ...],
-#         [1, 0.9, -10, ...],
-#         [0, 0.001, 100, ...],
-#         [-1, -1.1, 30, ...],
-#         [],
-#         [],
-#         [],
-#     ]
-#     columns = [
-#         'Price',  # y_col
-#         'COL1', 'COL2', 'COL3', "COL4", "COL5", "COL6", "COL7"
-#     ]
-#
-#     return pd.DataFrame(data, columns=columns)
+ def fs_inputs():
+
+      data = [
+          [1.4, 0.9, 0, 5, 70, 0, 20],
+          [1.1, 0.9, -10, -5, 140, 10, 80],
+          [0.9, 0.001, 100, 15, 60, 20, 45],
+          [-1.01, -1.1, 30, -45, -90, 10, 5],
+          [-1.10, -1,5, 45, -55, 10, -5, 15],
+          [],
+          [1],
+     ]
+     columns = [
+         'Price',  # y_col
+        'COL1', 'COL2', 'COL3', "COL4", "COL5", "COL6", "COL7"
+     ]
+
+     return pd.DataFrame(data, columns=columns)
 
 # TESTING PRINCIPLES
 # y = mx1 + m2x2 + c + error
