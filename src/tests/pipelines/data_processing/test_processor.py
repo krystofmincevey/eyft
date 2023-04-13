@@ -244,35 +244,44 @@ class TestCatDummies(object):
             data=[
                 [3.25e+05, 3, None, 'Hendrik De Braekeleerlaan 68', 2.59e+02, 0, 1, 1],
                 [1.74e+05, 2, 2, 'Antwerpsesteenweg 50', 6.44e+02, 0, 1, 0],
-                [1.74e+05, 2, 3, 'Antwerpsesteenweg 5', 6.44e+02, 0, 1, 0],
+                [1.74e+05, 2, 4, 'Antwerpsesteenweg 5', 6.44e+02, 0, 1, 0],
                 [1.99e+05, 2, 2, 'Hoevelei 194', 2.06e+02, 0, 1, 0],
-                [2.39e+05, 2, 2, 'Leon Gilliotlaan 40', 2.29e+02, 0, -1, 0],
+                [2.39e+05, 2, 1, 'Leon Gilliotlaan 40', 2.29e+02, 0, -1, 0],
                 [2.85e+05, 3, None, 'De Cranelei 9', 4.40e+01, 0, -1, 1],
                 [3.69e+05, 1, 2, 'Kapellestraat 159', 0.00e+00, 0, -1, 0],
                 [3.69e+05, 1, 3, 'Kapellestraat 159 B', 0.00e+00, 0, -1, 0]
             ],
-            columns=['Price', 'Bedrooms', 'Facades', 'Street', 'EPC', 'Zeros', 'Ones', 'no_Facades']
+            columns=['Price', 'Bedrooms', 'Facades', 'Street', 'EPC', 'Zeros', 'Ones', 'missing_Facades']
         )
         assert_frame_equal(df_actual, df_expected, check_dtype=False)
 
 
 class TestCategorize(object):
 
-    def test_values(self, epc_input):
-        df_actual = categorize(df=epc_input, col='Bedrooms', cats=['Bdr'])['df']
+    def test_values(self, epc_input_3):
+        df_actual = categorize(df=epc_input_3, col='Bedrooms')['df']
 
         df_expected = pd.DataFrame(
             data=[
-                [3.25e+05, 3, None, 'Hendrik De Braekeleerlaan 68', 2.59e+02, 0, 1, 0, 0, 1],
-                [1.74e+05, 2, 2, 'Antwerpsesteenweg 50', 6.44e+02, 0, 1, 0, 1, 0],
-                [1.74e+05, 2, 3, 'Antwerpsesteenweg 5', 6.44e+02, 0, 1, 0, 1, 0],
-                [1.99e+05, 2, 2, 'Hoevelei 194', 2.06e+02, 0, 1, 0, 1, 0],
-                [2.39e+05, 2, 2, 'Leon Gilliotlaan 40', 2.29e+02, 0, -1, 0, 1, 0],
-                [2.85e+05, 3, None, 'De Cranelei 9', 4.40e+01, 0, -1, 0, 0, 1],
-                [3.69e+05, 1, 2, 'Kapellestraat 159', 0.00e+00, 0, -1, 1, 0, 0],
-                [3.69e+05, 1, 3, 'Kapellestraat 159 B', 0.00e+00, 0, -1, 1, 0, 0]
-            ],
-            columns=['Price', 'Bedrooms', 'Facades', 'Street', 'EPC', 'Zeros', 'Ones', '1Bedroom', '2Bedroom',
-                     '3Bedroom']
+                [3.25e+05, 1, None, 1, 0],
+                [1.74e+05, 5, 'a', 0, 1],
+                [1.74e+05, 5, 'b', 0, 1],
+                [1.74e+05, None, 'b', 0, 0],
+            ], columns=['Price', 'Bedrooms', 'EPC', "Bedrooms_is_1", "Bedrooms_is_5"]
         )
+
+        assert_frame_equal(df_actual, df_expected, check_dtype=False)
+
+    def test_values_2(self, epc_input_3):
+        df_actual = categorize(df=epc_input_3, col='EPC', cats=['a', 'f'])['df']
+
+        df_expected = pd.DataFrame(
+            data=[
+                [3.25e+05, 1, None, 0, 0],
+                [1.74e+05, 5, 'a', 1, 0],
+                [1.74e+05, 5, 'b', 0, 0],
+                [1.74e+05, None, 'b', 0, 0],
+            ], columns=['Price', 'Bedrooms', 'EPC', "EPC_is_a", "EPC_is_f"]
+        )
+
         assert_frame_equal(df_actual, df_expected, check_dtype=False)

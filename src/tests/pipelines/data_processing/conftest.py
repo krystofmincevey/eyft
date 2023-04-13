@@ -20,7 +20,6 @@ def epc_input():
     return pd.DataFrame(data, columns=columns)
 
 
-# ------------------------------
 @pytest.fixture
 def epc_input_2():
 
@@ -39,3 +38,15 @@ def epc_input_2():
     return pd.DataFrame(data, columns=columns)
 
 
+@pytest.fixture
+def epc_input_3():
+
+    data = [
+        [3.25e+05, 1, None],
+        [1.74e+05, 5, 'a'],
+        [1.74e+05, 5, 'b'],
+        [1.74e+05, None, 'b'],
+    ]
+    columns = ['Price', 'Bedrooms', 'EPC']
+
+    return pd.DataFrame(data, columns=columns)

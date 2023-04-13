@@ -375,7 +375,7 @@ def segment(
 def cat_dummies(
     df: pd.DataFrame,
     col: str,
-    prefix: str = 'no'
+    prefix: str = 'missing'
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
 
     """
@@ -394,11 +394,10 @@ def cat_dummies(
     return {"df": df, "col": col, "prefix": prefix}
 
 
-
 def categorize(
     df: pd.DataFrame,
     col: str,
-    cats: List[str],
+    cats: List[str] = None,
 ) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
     """
     Function that creates dummies for each category
@@ -423,8 +422,16 @@ def categorize(
         vals_d: [0, 0, 0, 1, 0]
         vals_e: [0, 0, 0, 0, 0]
     """
+    if cats is None:
+        cats = df[col].unique()
+        # Remove NaNs to avoid creating dummy cols for missing values
+        cats = cats[~np.isnan(cats)].tolist()
 
-    df[col] = pd.get_dummies(df[col], columns=col, dtype=int)
+        if df[col].dtype == 'float':
+            cats = [int(_cat) for _cat in cats]
+
+    for _cat in cats:
+        df[f'{col}_is_{_cat}'] = np.where(df[col] == _cat, 1, 0)
 
     return {"df": df, "col": col, "cats": cats}
 # --------------------------------------------------
