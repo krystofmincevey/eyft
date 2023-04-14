@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import sklearn
 import xgboost as xgb
 import statsmodels.api as sm
 
@@ -7,6 +8,7 @@ from typing import List
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.linear_model import Lasso, LogisticRegression
 from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
 
 
 from ..feature_engineering import logger
@@ -220,6 +222,8 @@ def lasso(
     model_coef = lasso_reg_model.coef_
 
     y_pred = lasso.predict()
+    sklearn.metrics.r2_score(y, y_pred)
+    mse = mean_squared_error(y, y_pred)
 
 
     raise NotImplementedError
