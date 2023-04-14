@@ -1,6 +1,17 @@
+# TODO; Move kwarg defaults into constants.py.
+
+# GENERIC CONSTANTS -------------------------------------------------
 SEED = 42
 
 
+# PROCESSING CONSTANTS ----------------------------------------------
+
+
+# ENGINEERING CONSTANTS ---------------------------------------------
+
+
+
+# SELECTION CONSTANTS -----------------------------------------------
 RF_PARAMS = {
     'eta': 0.039,
     'verbosity': 0,
@@ -10,3 +21,9 @@ RF_PARAMS = {
     'eval_metric': 'mae',
     'random_state': SEED,
 }
+
+
+# MODELLING CONSTANTS -----------------------------------------------
+
+
+# MODELLING CONSTANTS -----------------------------------------------

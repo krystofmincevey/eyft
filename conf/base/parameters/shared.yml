@@ -1,0 +1,5 @@
+# GENERIC:
+none: None
+
+# MODEL:
+target_col: "EPC"  # don't forget to include in data_processing.yml

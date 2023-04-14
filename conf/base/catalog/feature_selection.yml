@@ -1,0 +1,14 @@
+final_train:
+  type: pandas.ExcelDataSet
+  filepath: data/04_feature_selection/final_train.xlsx
+
+final_test:
+  type: pandas.ExcelDataSet
+  filepath: data/04_feature_selection/final_test.xlsx
+final_train:
+  type: pandas.ExcelDataSet
+  filepath: data/04_feature_selection/final_train.xlsx
+
+final_test:
+  type: pandas.ExcelDataSet
+  filepath: data/04_feature_selection/final_test.xlsx

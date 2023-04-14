@@ -3,7 +3,7 @@ import numpy as np
 from functools import wraps
 
 
-def _seed(func):
+def seed(func):
     @wraps(func)
     def function_wrapper(*args, **kwargs):
         orig_seed = np.random.get_state()

@@ -1,0 +1,11 @@
+fs_params:
+  # KEYS MUST FOLLOW fs_[0-9]+
+  fs_1:
+    is_cv: True
+    key:
+    exclude_cols: []  # cols that will be selected regardless of importance
+
+  fs_2:
+    is_cv: True
+    key:
+    exclude_cols: [ ]  # cols that will be selected regardless of importance
