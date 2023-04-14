@@ -394,7 +394,7 @@ def cat_dummies(
     return {"df": df, "col": col, "prefix": prefix}
 
 
-
+# DOES NOT WORK
 def categorize(
     df: pd.DataFrame,
     col: str,
@@ -427,7 +427,7 @@ def categorize(
     unique = df[col].unique()
     unique.sort()
     df[col] = pd.Series(df[col], dtype='category')
-    for col = df[col].unique()
+#    for col = df[col].unique()
 
     np.where(df[col].unique)
     np.where(df[col].cat.categories)

@@ -30,7 +30,7 @@ def select(
 
 
 def _sm_model(x_df: pd.DataFrame, y_df: pd.DataFrame):
-    if len(np.unique(y_df.values)) <= 2:
+    if len(np.unique(y_df)) <= 2:
         model = sm.Logit(y_df, x_df)
     else:
         model = sm.OLS(y_df, sm.add_constant(x_df))
