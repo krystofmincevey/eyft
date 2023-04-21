@@ -9,7 +9,10 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 from ..feature_engineering import logger
 from ...utils.models import seed
 from ...utils.constants import SEED, RF_PARAMS
-
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.linear_model import Lasso
 
 # TODO: Integrate feature selection into either random or bayesian
 #  search during model selection.
@@ -238,8 +241,25 @@ def lasso(
     Keep weights that are larger than cutoff,
     using lasso regressions to determine weights.
     """
+    X,y = df(return_X_y=True)
+    features = df()['col']
+    pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('model', Lasso())
+    ])
 
-    lasso(df, cutoff)
+    search = GridSearchCV(pipeline,
+                          {'model_alpha': np.arange(0.1, 10, 0.1)},
+                          cv=5, scoring="neg_mean_squared_error", verbose=3
+                          )
+
+    search.best_params_()
+    coefficients = search.best_estimator_.named_steps['model'].coef
+    importance = np.abs(coefficients)
+
+    np.array(features)[importance > 0]
+    np.array(features)[importance == 0]
+
 
     # TODO: Arthur
     raise NotImplementedError
