@@ -25,7 +25,7 @@ def _sm_model(x_df: pd.DataFrame, y_df: pd.DataFrame):
     Either returns OLS or Logit GLMs. Logit
     is returned when y is categorical.
     """
-    if len(np.unique(y_df.values)) <= 2:
+    if len(np.unique(y_df)) <= 2:
         model = sm.Logit(y_df, x_df)
     else:
         model = sm.OLS(y_df, sm.add_constant(x_df))
@@ -56,6 +56,7 @@ def forward_select(
     )
 
     y = df[y_col].values
+    df = df.loc[:, ~df.columns.isin([y_col])]
     features = [] if exclude_cols is None else exclude_cols
     initial_features = df.columns.to_list()
 
@@ -99,7 +100,8 @@ def backward_eliminate(
         f"cutoff: {cutoff}."
     )
 
-    y = df[y_col]
+    y = df[y_col].values
+    df = df.loc[:, ~df.columns.isin([y_col])]
     features = df.columns.tolist()
     exclude_cols = [] if exclude_cols is None else exclude_cols
     remaining_features = list(set(features) - set(exclude_cols))
@@ -111,7 +113,7 @@ def backward_eliminate(
 
         max_p_value = p_values.max()
         if max_p_value >= cutoff:
-            remove_feature: str = p_values.idxmax()
+            remove_feature: str = p_values.max()
             features.remove(remove_feature)
             remaining_features.remove(remove_feature)
             logger.info(
@@ -128,7 +130,7 @@ def step_wise_select(
     y_col: str,
     cutoff_in: float = 0.05,
     cutoff_out: float = 0.05,
-    exclude_cols: List[str] = None,  # TODO: KRYSTOF
+    exclude_cols: List[str] = None,
 ) -> List[str]:
     """
     It is similar to forward selection but the difference is
@@ -145,9 +147,10 @@ def step_wise_select(
         f"cutoff: {cutoff_out}."
     )
 
-    y = df[y_col]
+    y = df[y_col].values
+    df = df.loc[:, ~df.columns.isin([y_col])]
+    features = [] if exclude_cols is None else exclude_cols
     initial_features = df.columns.tolist()
-    features = []
 
     while len(initial_features) > 0:
 
@@ -171,10 +174,10 @@ def step_wise_select(
                 p_values = model.pvalues[features]
                 max_p_value = p_values.max()
                 if max_p_value >= cutoff_out:
-                    excluded_feature = p_values.idxmax()
-                    features.remove(excluded_feature)
+                    remove_feature = p_values.idxmax()
+                    features.remove(remove_feature)
                     logger.info(
-                        f"Removed {excluded_feature} whose p-value was: {max_p_value}."
+                        f"Removed {remove_feature} whose p-value was: {max_p_value}."
                     )
                 else:
                     break
@@ -259,6 +262,8 @@ def lasso(
 
     np.array(features)[importance > 0]
     np.array(features)[importance == 0]
+
+    return features
 
 
     # TODO: Arthur
