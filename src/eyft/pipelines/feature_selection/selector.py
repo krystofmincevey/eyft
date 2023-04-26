@@ -3,7 +3,7 @@ import pandas as pd
 import xgboost as xgb
 import statsmodels.api as sm
 
-from typing import List, Dict
+from typing import List, Dict, Set
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 from ..feature_engineering import logger
@@ -13,6 +13,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.linear_model import Lasso
+
 
 # TODO: Integrate feature selection into either random or bayesian
 #  search during model selection.
@@ -33,10 +34,10 @@ def _sm_model(x_df: pd.DataFrame, y_df: pd.DataFrame):
 
 
 def forward_select(
-    df: pd.DataFrame,
-    y_col: str,
-    cutoff: float = 0.05,
-    exclude_cols: List[str] = None
+        df: pd.DataFrame,
+        y_col: str,
+        cutoff: float = 0.05,
+        exclude_cols: List[str] = None
 ) -> List[str]:
     """
     In forward selection, we start with a null model and then start
@@ -83,10 +84,10 @@ def forward_select(
 
 
 def backward_eliminate(
-    df: pd.DataFrame,
-    y_col: str,
-    cutoff: float = 0.05,
-    exclude_cols: List[str] = None,
+        df: pd.DataFrame,
+        y_col: str,
+        cutoff: float = 0.05,
+        exclude_cols: List[str] = None,
 ) -> List[str]:
     """
     In backward elimination, we start with the full model
@@ -126,11 +127,11 @@ def backward_eliminate(
 
 
 def step_wise_select(
-    df: pd.DataFrame,
-    y_col: str,
-    cutoff_in: float = 0.05,
-    cutoff_out: float = 0.05,
-    exclude_cols: List[str] = None,
+        df: pd.DataFrame,
+        y_col: str,
+        cutoff_in: float = 0.05,
+        cutoff_out: float = 0.05,
+        exclude_cols: List[str] = None,
 ) -> List[str]:
     """
     It is similar to forward selection but the difference is
@@ -189,10 +190,10 @@ def step_wise_select(
 
 @seed
 def random_forrest(
-    df: pd.DataFrame,
-    y_col: str,
-    cutoff: float = None,
-    exclude_cols: List[str] = None,  # TODO: Krystof
+        df: pd.DataFrame,
+        y_col: str,
+        cutoff: float = None,
+        exclude_cols: List[str] = None,  # TODO: Krystof
 ) -> List[str]:
     """
     Keep most important features
@@ -218,7 +219,7 @@ def random_forrest(
     imp_tuples.sort(key=lambda x: x[1], reverse=True)
 
     # Set cutoff - if none use the mean importance.
-    cutoff = cutoff if cutoff is not None else- sum(importance.values())/len(imp_tuples)
+    cutoff = cutoff if cutoff is not None else - sum(importance.values()) / len(imp_tuples)
 
     features = []
     for _feature, imp in imp_tuples:
@@ -229,79 +230,116 @@ def random_forrest(
             )
             features.append(_feature)
         else:
-            break # since sorted in descending order
+            break  # since sorted in descending order
 
     return features
 
 
 def lasso(
-    df: pd.DataFrame,
-    y_col: str,
-    cutoff: float,
-    exclude_cols: List[str] = None,  # TODO: Krystof
+        df: pd.DataFrame,
+        y_col: str,
+        cutoff: float = 0,
+        exclude_cols: List[str] = None,
+        alpha: float = 0.05
 ) -> List[str]:
     """
     Keep weights that are larger than cutoff,
     using lasso regressions to determine weights.
     """
-    X,y = df(return_X_y=True)
-    features = df()['col']
-    pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('model', Lasso())
-    ])
+    df_x = df.loc[:, ~df.columns.isin([y_col])]
+    y = df[y_col].values
 
-    search = GridSearchCV(pipeline,
-                          {'model_alpha': np.arange(0.1, 10, 0.1)},
-                          cv=5, scoring="neg_mean_squared_error", verbose=3
-                          )
+    lasreg = Lasso(alpha=alpha)
 
-    search.best_params_()
-    coefficients = search.best_estimator_.named_steps['model'].coef
+    lasreg.fit(X=df_x, y=y)
+    coefficients = lasreg.coef_
     importance = np.abs(coefficients)
+    print(df_x.columns)
+    print(importance)
 
-    np.array(features)[importance > 0]
-    np.array(features)[importance == 0]
+    selected_features = []
+    for i in range(len(coefficients)):
+        if importance[i] > cutoff:
+            selected_features.append(df_x.columns[i])
 
-    return features
-
-
-    # TODO: Arthur
-    raise NotImplementedError
-    # return features
+    return selected_features
 
 
 def pearson(
-    df: pd.DataFrame,
-    y_col: str,
-    cutoff: float = 0.80,
-    exclude_cols: List[str] = None,  # TODO: Krystof
+        df: pd.DataFrame,
+        y_col: str,
+        cutoff: float = 0.80,
+        exclude_cols: List[str] = None,
 ) -> List[str]:
     """
-    Keep features that have a pearson
+    Keep features that have a Pearson
     correlation lower than the cutoff.
-
-    IMAGINE IF in y = mx + c + error
-    in inputs you also had 2x
-    x and 2x  -> this can pose issues when modelling
-
-    check correlations and only keep either 2x or x but not both!
     """
-    corr_matrix = df.corr()
-    upper = corr_matrix.where((np.triu(np.ones(corr_matrix.shape), k=1) +
-                               np.tril(np.ones(corr_matrix.shape), k=-1)).astype(bool))
-    to_drop = [column for column in upper.columns if any(upper[column] > 0.80)]
-    df.drop(to_drop, axis=1, inplace=True)
 
-    raise NotImplementedError
-    # return features
+    # Drop any columns specified in exclude_cols
+    if exclude_cols:
+        df = df.drop(exclude_cols, axis=1)
 
+    # Compute the correlation matrix using Pearson correlation
+    corr_matrix = df.corr(method='pearson')
 
+    # Select the features that are highly correlated with the target column
+    corr_with_target = corr_matrix[y_col]
+    high_corr_features = corr_with_target[abs(corr_with_target) > cutoff].index.tolist()
+    high_corr_features.remove(y_col)
+
+    # Drop one of the highly correlated features
+    for feature in high_corr_features:
+        corr_values = corr_matrix[feature][high_corr_features].drop(feature)
+        if abs(corr_values).max() > cutoff:
+            drop_feature = corr_values.abs().idxmax()
+            if feature != y_col:
+                df.drop(drop_feature, axis=1, inplace=True)
+                high_corr_features.remove(drop_feature)
+                break
+
+    return high_corr_features
+
+def remove_multicollinearity(
+        df: pd.DataFrame,
+        y_col: str,
+        cutoff: float = 0.80
+) -> List[str]:
+    """
+    Remove features that are highly correlated with each other
+    using Pearson correlation coefficient.
+
+    Returns a list of the remaining feature names.
+    """
+
+    # Compute the correlation matrix using Pearson correlation
+    corr_matrix = df.drop(y_col, axis=1).corr(method='pearson')
+
+    # Find pairs of variables with a correlation coefficient higher than the cutoff
+    high_corr_pairs = []
+    for i in range(len(corr_matrix.columns)):
+        for j in range(i):
+            if abs(corr_matrix.iloc[i, j]) > cutoff:
+                high_corr_pairs.append((corr_matrix.columns[i], corr_matrix.columns[j]))
+
+    # Determine which variable to drop from each high-correlation pair
+    to_drop = set()
+    for col1, col2 in high_corr_pairs:
+        if col1 not in to_drop and col2 not in to_drop:
+            corr_with_target1 = abs(df[col1].corr(df[y_col], method='pearson'))
+            corr_with_target2 = abs(df[col2].corr(df[y_col], method='pearson'))
+            if corr_with_target1 > corr_with_target2:
+                to_drop.add(col2)
+            else:
+                to_drop.add(col1)
+
+    # Return the remaining feature names without the Y column
+    return list(set(df.columns) - to_drop - set([y_col]))
 def vif(
-    df: pd.DataFrame,
-    y_col: str,
-    cutoff: float = 5,
-    exclude_cols: List[str] = None,
+        df: pd.DataFrame,
+        y_col: str,
+        cutoff: float = 5,
+        exclude_cols: List[str] = None,
 ) -> List[str]:
     """
     Keep features that have a VIF (Variance Inflation Factor)
@@ -347,7 +385,6 @@ def vif(
 
 
 class Selector(object):
-
     MAPPER = {
         "rf": random_forrest,
         "forward": forward_select,
@@ -381,9 +418,9 @@ class Selector(object):
         return self._best_features
 
     def feature_select(
-        self, key,
-        is_cv: bool = False,
-        **kwargs
+            self, key,
+            is_cv: bool = False,
+            **kwargs
     ):
         if is_cv in ['True', True]:
             self.cv_select(key, **kwargs)
@@ -405,12 +442,12 @@ class Selector(object):
 
     @seed
     def cv_select(
-        self,
-        key: str,
-        n_eval: int = 10,
-        train_prc: float = 0.8,
-        cutoff = None,
-        **kwargs: Dict[str, str]
+            self,
+            key: str,
+            n_eval: int = 10,
+            train_prc: float = 0.8,
+            cutoff=None,
+            **kwargs: Dict[str, str]
     ):
         """
         Performs Cross Validation (CV) feature selection.
@@ -433,7 +470,7 @@ class Selector(object):
 
         n_obs = self._df.shape[0]
         n_train = int(n_obs * train_prc)
-        cutoff = cutoff if cutoff is not None else int(n_eval/2)
+        cutoff = cutoff if cutoff is not None else int(n_eval / 2)
 
         fs_func = self.MAPPER[_key]
         feature_ranks = {

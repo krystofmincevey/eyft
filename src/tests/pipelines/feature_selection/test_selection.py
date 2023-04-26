@@ -5,8 +5,10 @@ from unittest import TestCase
 
 from eyft.pipelines.feature_selection.selector import (
      _sm_model, forward_select, backward_eliminate,
-     step_wise_select, random_forrest, lasso, pearson, vif
+     step_wise_select, random_forrest, lasso, pearson, vif, remove_multicollinearity
 )
+from tests.pipelines.feature_selection.conftest import fs_inputs, corr_inputs
+from tests.pipelines.feature_selection.conftest import feat_sel_inputs
 
 
 # class TestSelect(object):
@@ -72,17 +74,38 @@ class TestRandomForest(object):
 
         assert df_actual == df_expected
 
-     #  df_expected =
-#class TestLasso(object):
-    #def test_values_l(self, fs_inputs):
-        #df_actual = lasso(fs_inputs)
+class TestLasso(object):
+    def test_values_l(self, feat_sel_inputs):
+        df_actual = set(lasso(feat_sel_inputs, 'Y', cutoff=0.1))
 
-      # df_expected =
-#class TestPearson(object):
-    #def test_values_p(self, fs_inputs):
-       # df_actual = pearson(fs_inputs)
+        df_expected = {'COL1', 'COL3'}
 
-       #df_expected = f
+        assert df_actual == df_expected
+
+class TestPearson(object):
+    def test_values_p(self, corr_inputs):
+        df_actual = set(pearson(corr_inputs, y_col='Y'))
+
+        df_expected = {'COL1'}
+
+        assert df_actual == df_expected
+
+class TestMulticollie(object):
+    def test_valuesmc(self, corr_inputs):
+        df_actual = set(remove_multicollinearity(corr_inputs, y_col='Y'))
+
+        df_expected = {'COL1', 'COL3', 'COL4'}
+
+        assert df_actual == df_expected
+
+class Testvif(object):
+    def test_valuesvif(self, fs_inputs):
+        df_actual = set(vif(fs_inputs, y_col='Y'))
+
+        df_expected = {'COL1', 'COL2', 'COL3', 'COL4'}
+
+        assert df_actual == df_expected
+
 
 
 
