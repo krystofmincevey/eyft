@@ -82,7 +82,7 @@ class TestRandomForest(object):
     #def test_values_p(self, fs_inputs):
        # df_actual = pearson(fs_inputs)
 
-       #df_expected =
+       #df_expected = f
 
 
 
