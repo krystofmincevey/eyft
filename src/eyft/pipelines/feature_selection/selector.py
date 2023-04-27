@@ -3,16 +3,17 @@ import pandas as pd
 import xgboost as xgb
 import statsmodels.api as sm
 
-from typing import List, Dict
+from typing import List, Dict, Hashable, Any
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import Lasso
 
 from ..feature_engineering import logger
 from ...utils.models import seed
 from ...utils.constants import SEED, RF_PARAMS
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.linear_model import Lasso
+
 
 # TODO: Integrate feature selection into either random or bayesian
 #  search during model selection.
@@ -20,16 +21,42 @@ from sklearn.linear_model import Lasso
 # TODO: Implement CV feature selection
 
 
-def _sm_model(x_df: pd.DataFrame, y_df: pd.DataFrame):
+def _set_list(vals) -> List[Any]:
+    """Ensure that vals are list"""
+    if vals is None:
+        return []
+    elif type(vals) != list:
+        return [vals]
+    else:
+        return vals
+
+
+def _sm_model(df_x: pd.DataFrame, y: np.ndarray):
     """
     Either returns OLS or Logit GLMs. Logit
     is returned when y is categorical.
     """
-    if len(np.unique(y_df)) <= 2:
-        model = sm.Logit(y_df, x_df)
+    if len(np.unique(y)) <= 2:
+        model = sm.Logit(y, df_x)
     else:
-        model = sm.OLS(y_df, sm.add_constant(x_df))
+        model = sm.OLS(y, sm.add_constant(df_x))
     return model.fit()
+
+
+def _rf_model(df_x: pd.DataFrame, y: np.ndarray):
+    """
+    Either returns Classifier or Regressor.
+    Classifier is returned when y is categorical.
+    """
+
+    # MODEL
+    if len(np.unique(y)) < 2:
+        model = xgb.XGBClassifier(random_state=SEED, max_depth=3)
+    else:
+        model = xgb.XGBRegressor(**RF_PARAMS)
+
+    model.fit(df_x, y)
+    return model
 
 
 def forward_select(
@@ -37,7 +64,7 @@ def forward_select(
     y_col: str,
     cutoff: float = 0.05,
     exclude_cols: List[str] = None
-) -> List[str]:
+) -> List[Hashable]:
     """
     In forward selection, we start with a null model and then start
     fitting the model with each individual feature one at a time
@@ -56,9 +83,10 @@ def forward_select(
     )
 
     y = df[y_col].values
-    df = df.loc[:, ~df.columns.isin([y_col])]
-    features = [] if exclude_cols is None else exclude_cols
-    initial_features = df.columns.to_list()
+    df_x = df.loc[:, ~df.columns.isin([y_col])]
+
+    features = _set_list(exclude_cols)
+    initial_features = df_x.columns.to_list()
 
     while len(initial_features) > 0:
 
@@ -66,8 +94,14 @@ def forward_select(
 
         new_pval = pd.Series(index=remaining_features)
         for new_column in remaining_features:
-            model = _sm_model(x_df=df[features + [new_column]], y_df=y)
-            new_pval[new_column] = model.pvalues[new_column]
+            model = _sm_model(df_x=df_x[features + [new_column]], y=y)
+
+            coef = model.params[new_column]
+            pval = model.pvalues[new_column]
+            # To allow for the possibility of floating point precision error:
+            if abs(coef) < 1e-6:
+                pval = 1.
+            new_pval[new_column] = pval
 
         min_p_value = new_pval.min()
         if min_p_value < cutoff:
@@ -87,7 +121,7 @@ def backward_eliminate(
     y_col: str,
     cutoff: float = 0.05,
     exclude_cols: List[str] = None,
-) -> List[str]:
+) -> List[Hashable]:
     """
     In backward elimination, we start with the full model
     (including all the independent variables) and then remove
@@ -101,19 +135,23 @@ def backward_eliminate(
     )
 
     y = df[y_col].values
-    df = df.loc[:, ~df.columns.isin([y_col])]
-    features = df.columns.tolist()
-    exclude_cols = [] if exclude_cols is None else exclude_cols
+    df_x = df.loc[:, ~df.columns.isin([y_col])]
+
+    features = df_x.columns.tolist()
+    exclude_cols = _set_list(exclude_cols)
     remaining_features = list(set(features) - set(exclude_cols))
 
     while len(remaining_features) > 0:
 
-        model = _sm_model(x_df=df[features], y_df=y)
-        p_values: pd.Series = model.pvalues[remaining_features]
+        model = _sm_model(df_x=df_x[features], y=y)
+        pvalues: pd.Series = model.pvalues[remaining_features]
+        coeffs: pd.Series = model.params[remaining_features]
+        # To allow for the possibility of floating point precision error:
+        pvalues.loc[coeffs.abs() < 1e-6] = 1
 
-        max_p_value = p_values.max()
+        max_p_value = pvalues.max()
         if max_p_value >= cutoff:
-            remove_feature: str = p_values.max()
+            remove_feature = pvalues.idxmax()
             features.remove(remove_feature)
             remaining_features.remove(remove_feature)
             logger.info(
@@ -122,7 +160,8 @@ def backward_eliminate(
         else:
             break
 
-    return features
+    remaining_features.extend(exclude_cols)
+    return remaining_features
 
 
 def step_wise_select(
@@ -131,7 +170,7 @@ def step_wise_select(
     cutoff_in: float = 0.05,
     cutoff_out: float = 0.05,
     exclude_cols: List[str] = None,
-) -> List[str]:
+) -> List[Hashable]:
     """
     It is similar to forward selection but the difference is
     while adding a new feature it also checks the significance
@@ -139,18 +178,20 @@ def step_wise_select(
     selected features insignificant then it simply removes
     that particular feature through backward elimination.
 
-    Hence, It is a combination of forward selection and backward elimination.
+    Hence, it is a combination of forward selection and backward elimination.
     """
     logger.info(
-        f"Performing stepwiseselection using the "
+        f"Performing stepwise selection using the "
         f"forward cutoff: {cutoff_in} and backward "
         f"cutoff: {cutoff_out}."
     )
 
     y = df[y_col].values
-    df = df.loc[:, ~df.columns.isin([y_col])]
-    features = [] if exclude_cols is None else exclude_cols
-    initial_features = df.columns.tolist()
+    df_x = df.loc[:, ~df.columns.isin([y_col])]
+
+    exclude_cols = _set_list(exclude_cols)
+    features = exclude_cols.copy()
+    initial_features = df_x.columns.to_list()
 
     while len(initial_features) > 0:
 
@@ -158,26 +199,42 @@ def step_wise_select(
         remaining_features = list(set(initial_features) - set(features))
         new_pval = pd.Series(index=remaining_features)
         for new_column in remaining_features:
-            model = _sm_model(x_df=df[features + [new_column]], y_df=y)
-            new_pval[new_column] = model.pvalues[new_column]
+            model = _sm_model(df_x=df_x[features + [new_column]], y=y)
+
+            coef = model.params[new_column]
+            pval = model.pvalues[new_column]
+            # To allow for the possibility of floating point precision error:
+            if abs(coef) < 1e-6:
+                pval = 1.
+            new_pval[new_column] = pval
 
         min_p_value = new_pval.min()
         if min_p_value < cutoff_in:
             features.append(new_pval.idxmin())
             logger.info(
-                f"Selected {features[-1]} whose p-value is: {min_p_value}."
+                f"FORWARD PASS: Selected {features[-1]} "
+                f"whose p-value is: {min_p_value}."
             )
 
             # BACKWARD ------------------------------------------------------
-            while len(features) > 0:
-                model = _sm_model(x_df=df[features], y_df=y)
-                p_values = model.pvalues[features]
-                max_p_value = p_values.max()
-                if max_p_value >= cutoff_out:
-                    remove_feature = p_values.idxmax()
+            remaining_features = list(set(features) - set(exclude_cols))
+
+            while len(remaining_features) > 0:
+
+                model = _sm_model(df_x=df_x[features], y=y)
+                pvalues: pd.Series = model.pvalues[remaining_features]
+                coeffs: pd.Series = model.params[remaining_features]
+                # To allow for the possibility of floating point precision error:
+                pvalues.loc[coeffs.abs() < 1e-6] = 1
+
+                max_pvalue = pvalues.max()
+                if max_pvalue >= cutoff_out:
+                    remove_feature = pvalues.idxmax()
                     features.remove(remove_feature)
+                    remaining_features.remove(remove_feature)
                     logger.info(
-                        f"Removed {remove_feature} whose p-value was: {max_p_value}."
+                        f"BACKWARD PASS: Removed {remove_feature} "
+                        f"whose p-value was: {max_pvalue}."
                     )
                 else:
                     break
@@ -188,29 +245,41 @@ def step_wise_select(
 
 
 @seed
-def random_forrest(
+def random_forest(
     df: pd.DataFrame,
     y_col: str,
     cutoff: float = None,
-    exclude_cols: List[str] = None,  # TODO: Krystof
+    exclude_cols: List[str] = None,
+    importance_type: str = 'gain',
 ) -> List[str]:
     """
     Keep most important features
     (as determined by random forest)
-    satisfying cutoff
+    satisfying cutoff.
+
+    Note: importance type can be defined as:
+
+        * 'weight': the number of times a feature is used to split the data across all trees.
+        * 'gain': the average gain across all splits the feature is used in.
+        * 'cover': the average coverage across all splits the feature is used in.
+        * 'total_gain': the total gain across all splits the feature is used in.
+        * 'total_cover': the total coverage across all splits the feature is used in.
+
+    WARNING: When setting cutoff, pay attention to what importance_type
+        is used.
     """
-    df_x = df.loc[:, ~df.columns.isin([y_col])]
+
     y = df[y_col].values
+    exclude_cols = _set_list(exclude_cols)
+    features = list(
+        set(df.columns.tolist()) - {*exclude_cols, y_col}
+    )
+    df_x = df.loc[:, features]
 
     # MODEL
-    if len(np.unique(y)) < 2:
-        model = xgb.XGBClassifier(random_state=SEED, max_depth=3)
-    else:
-        model = xgb.XGBRegressor(**RF_PARAMS)
-
-    model.fit(df_x, y)
+    model = _rf_model(df_x=df_x, y=y)
     importance = model.get_booster().get_score(
-        importance_type='weight', fmap=''
+        importance_type=importance_type, fmap=''
     )
 
     # SELECT BEST FEATURES
@@ -218,33 +287,36 @@ def random_forrest(
     imp_tuples.sort(key=lambda x: x[1], reverse=True)
 
     # Set cutoff - if none use the mean importance.
-    cutoff = cutoff if cutoff is not None else- sum(importance.values())/len(imp_tuples)
+    avg_importance = sum(importance.values())/len(imp_tuples)
+    cutoff = cutoff if cutoff is not None else avg_importance
 
-    features = []
+    imp_features = []
     for _feature, imp in imp_tuples:
         if imp > cutoff:
             logger.info(
                 f'Selecting {_feature} whose feature importance: {imp} '
-                f'is greater than cutoff: {cutoff}'
+                f'is greater than cutoff: {cutoff} with importance type: '
+                f'{importance_type}'
             )
-            features.append(_feature)
+            imp_features.append(_feature)
         else:
-            break # since sorted in descending order
+            break  # since sorted in descending order
 
-    return features
+    imp_features.extend(exclude_cols)  # include required cols
+    return imp_features
 
 
 def lasso(
     df: pd.DataFrame,
     y_col: str,
     cutoff: float,
-    exclude_cols: List[str] = None,  # TODO: Krystof
+    exclude_cols: List[str] = None,
 ) -> List[str]:
     """
     Keep weights that are larger than cutoff,
     using lasso regressions to determine weights.
     """
-    X,y = df(return_X_y=True)
+    X, y = df(return_X_y=True)
     features = df()['col']
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
@@ -264,11 +336,6 @@ def lasso(
     np.array(features)[importance == 0]
 
     return features
-
-
-    # TODO: Arthur
-    raise NotImplementedError
-    # return features
 
 
 def pearson(
@@ -297,6 +364,7 @@ def pearson(
     # return features
 
 
+# TODO: fix how correlated features excluded
 def vif(
     df: pd.DataFrame,
     y_col: str,
@@ -305,14 +373,13 @@ def vif(
 ) -> List[str]:
     """
     Keep features that have a VIF (Variance Inflation Factor)
-    smaller than cutoff
+    smaller than cutoff.
     """
 
-    i = 1
-    exclude_cols = exclude_cols if exclude_cols is not None else []
+    rd = 1
+    exclude_cols = _set_list(exclude_cols)
     max_vif_feature = 'None'  # kept as string so that while loop starts
-    x_df = df.loc[:, ~df.columns.isin([y_col])]
-    features = [col for col in x_df.columns if col not in exclude_cols]
+    features = [col for col in df.columns if col not in [y_col]]
 
     logger.info('\nRemoving collinear variables...')
     while max_vif_feature is not None:
@@ -320,17 +387,19 @@ def vif(
         # DETERMINE VIF:
         _x_df = sm.add_constant(df[features])
         vif = [
-            variance_inflation_factor(_x_df.values, i)
-            for i in range(_x_df.shape[1])
+            variance_inflation_factor(_x_df.values, j)
+            for j in range(_x_df.shape[1])
         ]
+        # start from 1: to ignore constant column
         vif_df = pd.DataFrame({'vif': vif[1:]}, index=features).T
 
         # DETERMINE MAX VIF:
         max_vif = cutoff
         max_vif_feature = None
-        for column in vif_df.columns:
+        remaining_cols = [col for col in vif_df.columns if col not in exclude_cols]
+        for column in remaining_cols:
             _vif = float(vif_df[column]['vif'])
-            # logger.info(f"ROUND {round}: {column} vif = {vif}")
+            logger.info(f"ROUND {round}: {column} vif = {vif}")
             if _vif > max_vif:
                 max_vif = _vif
                 max_vif_feature = column
@@ -339,9 +408,9 @@ def vif(
         if max_vif_feature is not None:
             df = df.drop([max_vif_feature], axis=1)
             features.remove(max_vif_feature)
-            logger.info(f'ROUND {i}: {max_vif_feature} is dropped with vif {max_vif}')
+            logger.info(f'ROUND {rd}: {max_vif_feature} is dropped with vif {max_vif}')
 
-        i += 1
+        rd += 1
 
     return features
 
@@ -349,7 +418,7 @@ def vif(
 class Selector(object):
 
     MAPPER = {
-        "rf": random_forrest,
+        "rf": random_forest,
         "forward": forward_select,
         "backward": backward_eliminate,
         "step": step_wise_select,
@@ -409,7 +478,7 @@ class Selector(object):
         key: str,
         n_eval: int = 10,
         train_prc: float = 0.8,
-        cutoff = None,
+        cutoff=None,
         **kwargs: Dict[str, str]
     ):
         """

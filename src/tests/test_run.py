@@ -7,15 +7,21 @@ named ``test_*`` which test a unit of logic.
 
 To run the tests, run ``kedro test`` from the project root directory.
 """
+import random
+import pytest
+import numpy as np
 
 from pathlib import Path
-
-import pytest
 
 from kedro.framework.project import settings
 from kedro.config import ConfigLoader
 from kedro.framework.context import KedroContext
 from kedro.framework.hooks import _create_hook_manager
+
+from eyft.utils.constants import SEED
+
+np.random.seed(SEED)
+random.seed(SEED)
 
 
 @pytest.fixture
