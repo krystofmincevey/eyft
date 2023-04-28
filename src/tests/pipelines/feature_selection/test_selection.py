@@ -99,12 +99,13 @@ class TestMulticollie(object):
         assert df_actual == df_expected
 
 class Testvif(object):
-    def test_valuesvif(self, fs_inputs):
-        df_actual = set(vif(fs_inputs, y_col='Y'))
+    def test_valuesvif(self, high_vif_values):
+        df_actual = set(vif(high_vif_values, y_col='Y'))
 
         df_expected = {'COL1', 'COL2', 'COL3', 'COL4'}
 
         assert df_actual == df_expected
+        #only x x variables
 
 
 

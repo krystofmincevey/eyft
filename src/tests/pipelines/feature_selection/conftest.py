@@ -3,7 +3,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal, assert_series_equal
 
 
-@pytest.fixture
+#@pytest.fixture
 def fs_inputs():
     data = [
         [1.4, 0.9, 0, 5, 70, 0, 20, (1.8 * 1.4 + 0.5 * 0.9 + 4 * 0 + -2 * 5 + 0.05)],
@@ -43,6 +43,18 @@ def corr_inputs():
         [-2.3, -4.6, -27, -10.2, (-2.3 - 0.005)],
         [0.2, 0.4, -0.15, 6, (0.2 + 0.005)],
         [-0.2, -0.4, -12, 4.5, (-0.2 - 0.005)],
+    ]
+    columns = ['COL1', 'COL2', 'COL3', 'COL4', 'Y']
+    return pd.DataFrame(data, columns=columns)
+
+#@pytest.fixture()
+def high_vif_inputs():
+    data = [
+        [1.0, 2.0, 3.0, 4.0, 5.0],
+        [2.0, 4.0, 6.0, 8.0, 10.0],
+        [3.0, 6.0, 9.0, 12.0, 15.0],
+        [4.0, 8.0, 12.0, 16.0, 20.0],
+        [5.0, 10.0, 15.0, 20.0, 25.0]
     ]
     columns = ['COL1', 'COL2', 'COL3', 'COL4', 'Y']
     return pd.DataFrame(data, columns=columns)
