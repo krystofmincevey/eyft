@@ -344,12 +344,22 @@ def lasso(
     selected_features.extend(exclude_cols)  # include required cols
     return selected_features
 
-
+# TODO final pearson
+# TODO make sure exclude works as expected
 def pearson(
-        df: pd.DataFrame,
-        y_col: str,
-        cutoff: float = 0.80,
-        exclude_cols: List[str] = None,
+    df: pd.DataFrame,
+    y_col: str,
+    cutoff: float = 0.80,
+    exclude_cols: List[str] = None,
+) -> List[str]:
+    raise NotImplementedError
+
+
+def pearson_xy(
+    df: pd.DataFrame,
+    y_col: str,
+    cutoff: float = 0.80,
+    exclude_cols: List[str] = None,
 ) -> List[str]:
     """
     Keep features that have a Pearson
@@ -368,23 +378,25 @@ def pearson(
     high_corr_features = corr_with_target[abs(corr_with_target) > cutoff].index.tolist()
     high_corr_features.remove(y_col)
 
-    # Drop one of the highly correlated features
-    for feature in high_corr_features:
-        corr_values = corr_matrix[feature][high_corr_features].drop(feature)
-        if abs(corr_values).max() > cutoff:
-            drop_feature = corr_values.abs().idxmax()
-            if feature != y_col:
-                df.drop(drop_feature, axis=1, inplace=True)
-                high_corr_features.remove(drop_feature)
-                break
-
     return high_corr_features
 
+    # # Drop one of the highly correlated features
+    # for feature in high_corr_features:
+    #     corr_values = corr_matrix[feature][high_corr_features].drop(feature)
+    #     if abs(corr_values).max() > cutoff:
+    #         drop_feature = corr_values.abs().idxmax()
+    #         if feature != y_col:
+    #             df.drop(drop_feature, axis=1, inplace=True)
+    #             high_corr_features.remove(drop_feature)
+    #             break
+    #
+    # return high_corr_features
 
-def remove_multicollinearity(
-        df: pd.DataFrame,
-        y_col: str,
-        cutoff: float = 0.80
+
+def pearson_xs(
+    df: pd.DataFrame,
+    y_col: str,
+    cutoff: float = 0.80
 ) -> List[str]:
     """
     Remove features that are highly correlated with each other
@@ -453,7 +465,8 @@ def vif(
         for column in remaining_cols:
             _vif = float(vif_df[column]['vif'])
             logger.info(f"ROUND {round}: {column} vif = {vif}")
-            if _vif > max_vif:
+
+            if (_vif > max_vif) or (np.isinf(_vif)):
                 max_vif = _vif
                 max_vif_feature = column
 
@@ -478,6 +491,8 @@ class Selector(object):
         "lasso": lasso,
         "vif": vif,
         "pearson": pearson,
+        "pearson_xy": pearson_xy,
+        "pearson_xs": pearson_xs
     }
 
     def __init__(self, df: pd.DataFrame, target_col: str):

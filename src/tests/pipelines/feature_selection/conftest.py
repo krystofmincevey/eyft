@@ -64,18 +64,6 @@ def corr_inputs():
     columns = ['COL1', 'COL2', 'COL3', 'COL4', 'Y']
     return pd.DataFrame(data, columns=columns)
 
-#@pytest.fixture()
-def high_vif_inputs():
-    data = [
-        [1.0, 2.0, 3.0, 4.0, 5.0],
-        [2.0, 4.0, 6.0, 8.0, 10.0],
-        [3.0, 6.0, 9.0, 12.0, 15.0],
-        [4.0, 8.0, 12.0, 16.0, 20.0],
-        [5.0, 10.0, 15.0, 20.0, 25.0]
-    ]
-    columns = ['COL1', 'COL2', 'COL3', 'COL4', 'Y']
-    return pd.DataFrame(data, columns=columns)
-
 
 @pytest.fixture
 def corr_inputs_2():
@@ -89,4 +77,17 @@ def corr_inputs_2():
         for x in range(N_VALS)
     ]
     columns = ['COL1', 'COL2', 'COL3', 'Y']
+    return pd.DataFrame(data, columns=columns)
+
+
+@pytest.fixture()
+def high_vif_inputs():
+    data = [
+        [1.0, 2.0, 3.0 + random.gauss(0., 0.01), 4.0 - random.gauss(0., 0.01), 5.0],
+        [2.0, 4.0, 6.0 + random.gauss(0., 0.01), 8.0 - random.gauss(0., 0.01), 10.0],
+        [3.0, 6.0, 9.0 + random.gauss(0., 0.01), 12.0 + random.gauss(0., 0.01), 15.0],
+        [4.0, 8.0, 12.0 - random.gauss(0., 0.01), 16.0 + random.gauss(0., 0.01), 20.0],
+        [5.0, 10.0, 15.0 - random.gauss(0., 0.01), 20.0 + random.gauss(0., 0.01), 25.0]
+    ]
+    columns = ['COL1', 'COL2', 'COL3', 'COL4', 'Y']
     return pd.DataFrame(data, columns=columns)
