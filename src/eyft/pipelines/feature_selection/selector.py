@@ -346,13 +346,7 @@ def lasso(
 
 # TODO final pearson
 # TODO make sure exclude works as expected
-def pearson(
-    df: pd.DataFrame,
-    y_col: str,
-    cutoff: float = 0.80,
-    exclude_cols: List[str] = None,
-) -> List[str]:
-    raise NotImplementedError
+
 
 
 def pearson_xy(
@@ -366,37 +360,29 @@ def pearson_xy(
     correlation lower than the cutoff.
     """
 
-    # Drop any columns specified in exclude_cols
-    if exclude_cols:
-        df = df.drop(exclude_cols, axis=1)
+    # Select all columns if exclude_cols is not specified
+    if not exclude_cols:
+        exclude_cols = []
 
     # Compute the correlation matrix using Pearson correlation
-    corr_matrix = df.corr(method='pearson')
+    corr_matrix = df.drop(exclude_cols, axis=1).corr(method='pearson')
 
     # Select the features that are highly correlated with the target column
     corr_with_target = corr_matrix[y_col]
     high_corr_features = corr_with_target[abs(corr_with_target) > cutoff].index.tolist()
     high_corr_features.remove(y_col)
 
-    return high_corr_features
+    # Add back any columns specified in exclude_cols
+    high_corr_features += exclude_cols
 
-    # # Drop one of the highly correlated features
-    # for feature in high_corr_features:
-    #     corr_values = corr_matrix[feature][high_corr_features].drop(feature)
-    #     if abs(corr_values).max() > cutoff:
-    #         drop_feature = corr_values.abs().idxmax()
-    #         if feature != y_col:
-    #             df.drop(drop_feature, axis=1, inplace=True)
-    #             high_corr_features.remove(drop_feature)
-    #             break
-    #
-    # return high_corr_features
+    return high_corr_features
 
 
 def pearson_xs(
     df: pd.DataFrame,
     y_col: str,
-    cutoff: float = 0.80
+    cutoff: float = 0.80,
+    exclude_cols: List[str] = None
 ) -> List[str]:
     """
     Remove features that are highly correlated with each other
@@ -426,8 +412,75 @@ def pearson_xs(
             else:
                 to_drop.add(col1)
 
+    # Remove excluded columns from the list of columns to be dropped
+    if exclude_cols:
+        to_drop = to_drop - set(exclude_cols)
+
     # Return the remaining feature names without the Y column
     return list(set(df.columns) - to_drop - set([y_col]))
+
+
+def pearson(
+    df: pd.DataFrame,
+    y_col: str,
+    cutoff: float = 0.80,
+    exclude_cols: List[str] = None,
+) -> str:
+    """
+    Keep features that have a Pearson correlation lower than the cutoff and
+    remove features that are highly correlated with each other using Pearson correlation coefficient.
+    Return a single highly correlated feature with the target column y_col.
+    """
+
+    # Select all columns if exclude_cols is not specified
+    if not exclude_cols:
+        exclude_cols = []
+
+    # Compute the correlation matrix using Pearson correlation
+    corr_matrix = df.drop(exclude_cols, axis=1).corr(method='pearson')
+
+    # Select the features that are highly correlated with the target column
+    corr_with_target = corr_matrix[y_col]
+    high_corr_features = corr_with_target[abs(corr_with_target) > cutoff].index.tolist()
+    high_corr_features.remove(y_col)
+
+    # Include excluded columns in the high_corr_features list
+    high_corr_features += exclude_cols
+
+    # Find pairs of variables with a correlation coefficient higher than the cutoff
+    high_corr_pairs = []
+    for i in range(len(corr_matrix.columns)):
+        for j in range(i):
+            if abs(corr_matrix.iloc[i, j]) > cutoff:
+                high_corr_pairs.append((corr_matrix.columns[i], corr_matrix.columns[j]))
+
+    # Determine which variable to drop from each high-correlation pair
+    to_drop = set()
+    for col1, col2 in high_corr_pairs:
+        if col1 not in to_drop and col2 not in to_drop:
+            corr_with_target1 = abs(df[col1].corr(df[y_col], method='pearson'))
+            corr_with_target2 = abs(df[col2].corr(df[y_col], method='pearson'))
+            if corr_with_target1 > corr_with_target2:
+                to_drop.add(col2)
+            else:
+                to_drop.add(col1)
+
+    # Add back any columns specified in exclude_cols
+    to_drop = to_drop - set(exclude_cols)
+
+    # Drop one of the highly correlated features
+    for feature in high_corr_features:
+        if feature in to_drop:
+            corr_values = corr_matrix[feature][high_corr_features].drop(feature)
+            if abs(corr_values).max() > cutoff:
+                drop_feature = corr_values.abs().idxmax()
+                if feature != y_col:
+                    df.drop(drop_feature, axis=1, inplace=True)
+                    high_corr_features.remove(drop_feature)
+                    break
+
+    # Return the list of features
+    return high_corr_features
 
 
 def vif(

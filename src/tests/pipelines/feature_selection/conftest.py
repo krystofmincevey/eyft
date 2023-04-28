@@ -65,6 +65,7 @@ def corr_inputs():
     return pd.DataFrame(data, columns=columns)
 
 
+
 @pytest.fixture
 def corr_inputs_2():
     data = [

@@ -5,7 +5,7 @@ from unittest import TestCase
 from eyft.pipelines.feature_selection.selector import (
     forward_select, backward_eliminate,
     step_wise_select, random_forest, lasso, pearson_xy, vif,
-    pearson_xs
+    pearson_xs, pearson
 )
 
 
@@ -94,12 +94,19 @@ class TestLasso(object):
         assert df_actual == df_expected
 
 
-class TestPearson(object):
+class TestPearsonxy(object):
 
     def test_values(self, corr_inputs):
         df_actual = set(pearson_xy(corr_inputs, y_col='Y'))
 
-        df_expected = {'COL1'}
+        df_expected = {'COL1', 'COL2'}
+
+        assert df_actual == df_expected
+
+    def test_values2(self, corr_inputs):
+        df_actual = set(pearson_xy(corr_inputs, y_col='Y', exclude_cols=['COL3']))
+
+        df_expected = {'COL1', 'COL2', 'COL3'}
 
         assert df_actual == df_expected
 
@@ -113,6 +120,27 @@ class TestMulticollie(object):
 
         assert df_actual == df_expected
 
+    def test_values2(self, corr_inputs):
+        df_actual = set(pearson_xs(corr_inputs, y_col='Y', exclude_cols=['COL2']))
+
+        df_expected = {'COL1', 'COL2', 'COL3', 'COL4'}
+
+        assert df_actual == df_expected
+
+class TestPearson(object):
+    def test_values(self, corr_inputs):
+        df_actual = set(pearson(corr_inputs, y_col='Y'))
+
+        df_expected = {'COL1'}
+
+        assert df_actual == df_expected
+
+    def test_values2(self, corr_inputs):
+        df_actual = set(pearson(corr_inputs, y_col='Y', exclude_cols=['COL2']))
+
+        df_expected = {'COL1', 'COL2'}
+
+        assert df_actual == df_expected
 
 class TestVIF(object):
 
