@@ -3,8 +3,9 @@ from pandas.testing import assert_frame_equal
 from unittest import TestCase
 
 from eyft.pipelines.feature_selection.selector import (
-     forward_select, backward_eliminate,
-     step_wise_select, random_forest, lasso, pearson, vif
+    forward_select, backward_eliminate,
+    step_wise_select, random_forest, lasso, pearson, vif,
+    remove_multicollinearity
 )
 
 
@@ -83,17 +84,31 @@ class TestRandomForest(object):
         assert df_actual == df_expected
 
 
-     #  df_expected =
-#class TestLasso(object):
-    #def test_values_l(self, fs_inputs):
-        #df_actual = lasso(fs_inputs)
+class TestLasso(object):
+    def test_values_l(self, feat_sel_inputs):
+        df_actual = set(lasso(feat_sel_inputs, 'Y', cutoff=0.1))
 
-      # df_expected =
-#class TestPearson(object):
-    #def test_values_p(self, fs_inputs):
-       # df_actual = pearson(fs_inputs)
+        df_expected = {'COL1', 'COL3'}
 
-       #df_expected = f
+        assert df_actual == df_expected
+
+
+class TestPearson(object):
+    def test_values_p(self, corr_inputs):
+        df_actual = set(pearson(corr_inputs, y_col='Y'))
+
+        df_expected = {'COL1'}
+
+        assert df_actual == df_expected
+
+
+class TestMulticollie(object):
+    def test_valuesmc(self, corr_inputs):
+        df_actual = set(remove_multicollinearity(corr_inputs, y_col='Y'))
+
+        df_expected = {'COL1', 'COL3', 'COL4'}
+
+        assert df_actual == df_expected
 
 
 class TestVIF(object):
