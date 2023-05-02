@@ -127,6 +127,7 @@ class TestMulticollie(object):
 
         assert df_actual == df_expected
 
+
 class TestPearson(object):
     def test_values(self, corr_inputs):
         df_actual = set(pearson(corr_inputs, y_col='Y'))
@@ -134,13 +135,13 @@ class TestPearson(object):
         df_expected = {'COL1'}
 
         assert df_actual == df_expected
-
     def test_values2(self, corr_inputs):
-        df_actual = set(pearson(corr_inputs, y_col='Y', exclude_cols=['COL2']))
+        df_actual = set(pearson(corr_inputs, y_col='Y', exclude_cols=['COL3']))
 
-        df_expected = {'COL1', 'COL2'}
+        df_expected = {'COL1', 'COL3'}
 
         assert df_actual == df_expected
+
 
 class TestVIF(object):
 

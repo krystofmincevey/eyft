@@ -419,7 +419,6 @@ def pearson_xs(
     # Return the remaining feature names without the Y column
     return list(set(df.columns) - to_drop - set([y_col]))
 
-
 def pearson(
     df: pd.DataFrame,
     y_col: str,
@@ -433,11 +432,11 @@ def pearson(
     """
 
     # Select all columns if exclude_cols is not specified
-    if not exclude_cols:
+    if exclude_cols is None:
         exclude_cols = []
 
     # Compute the correlation matrix using Pearson correlation
-    corr_matrix = df.drop(exclude_cols, axis=1).corr(method='pearson')
+    corr_matrix = df.corr(method='pearson')
 
     # Select the features that are highly correlated with the target column
     corr_with_target = corr_matrix[y_col]
@@ -481,7 +480,6 @@ def pearson(
 
     # Return the list of features
     return high_corr_features
-
 
 def vif(
     df: pd.DataFrame,
