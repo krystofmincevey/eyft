@@ -119,9 +119,6 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
     if data is not None:
         df = pd.DataFrame(data)
 
-        # DEBUG:
-        col = stored_column if stored_column is not None else None
-
         column_styles = []
         colors = {
             'int64': 'lightblue',
@@ -139,15 +136,32 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
                 dbc.CardBody([
                     html.Div([f'Viewing: {file_name}']),
                     dash_table.DataTable(
+                        id='table_data',
                         data=df.head(1000).to_dict('records'),
                         columns=[{'name': col_name, 'id': col_name} for col_name in df.columns],
                         fixed_rows={'headers': True},
-                        style_cell={'width': '150px'},  # adjust as needed
-                        style_table={'height': '300px', 'overflowY': 'auto'},
-                        style_data_conditional=column_styles,
-                        style_header={
-                            'textOverflow': 'ellipsis',  # use 'auto' for text wrapping
+                        # style_cell={'width': '150px'},  # adjust as needed
+                        # style_table={'height': '300px', 'overflowY': 'auto'},
+                        # style_header={
+                        #     'textOverflow': 'ellipsis',  # use 'auto' for text wrapping
+                        # },
+                        style_table={'overflow': 'scroll', 'height': 550},
+                        style_cell={
+                            'textAlign': 'center', 'minWidth': 95, 'maxWidth': 95, 'width': 95,
+                            'font_size': '12px', 'whiteSpace': 'normal', 'height': 'auto'
                         },
+                        style_header={'backgroundColor': '#305D91', 'padding': '10px', 'color': '#FFFFFF'},
+                        style_data_conditional=column_styles,
+                        editable=True,  # allow editing of data inside all cells
+                        filter_action="native",  # allow filtering of data by user ('native') or not ('none')
+                        sort_action="native",  # enables data to be sorted per-column by user or not ('none')
+                        sort_mode="single",  # sort across 'multi' or 'single' columns
+                        column_selectable="multi",  # allow users to select 'multi' or 'single' columns
+                        row_selectable="multi",  # allow users to select 'multi' or 'single' rows
+                        row_deletable=True,  # choose if user can delete a row (True) or not (False)
+                        selected_columns=[],  # ids of columns that user selects
+                        selected_rows=[],  # indices of rows that user selects
+                        page_action="native",
                     ),
                     html.Div([
                         html.Div('Color legend:', style={'font-weight': 'bold'}),
@@ -184,12 +198,11 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
             dbc.Card([
                 dbc.CardHeader("Uni-Variate Analysis"),
                 dbc.CardBody([
-                    html.Div([f'Select a column to analyze:  debug: {col}']),
+                    html.Div([f'Select a column to analyze:']),
                     dcc.Dropdown(
                         id='column-selector',
                         options=[{'label': i, 'value': i} for i in df.columns],
-                        # value=stored_column if stored_column is not None else '...',
-                        value=col,
+                        value=stored_column if stored_column is not None else None,
                         placeholder="..."
                     ),
                     html.Br(),
@@ -206,7 +219,7 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
                     dcc.Dropdown(
                         id='column-selector-2',
                         options=[{'label': i, 'value': i} for i in df.columns],
-                        # value=stored_column_2 if stored_column_2 is not None else '...',
+                        value=stored_column_2 if stored_column_2 is not None else None,
                         placeholder="..."
                     ),
                     html.Br(),
@@ -243,11 +256,9 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
         Output('column-statistics', 'children'),
         Output('column-plot', 'children'),
         Output('stored-column-selector', 'data'),
-    ],
-    [
+    ], [
         Input('column-selector', 'value')
-    ],
-    [
+    ], [
         State('stored-column-selector', 'data'),
         State('stored-data', 'data'),
     ]
@@ -310,16 +321,23 @@ def update_column_analysis(selected_column, stored_column, data):
 
 
 @app.callback(
-    Output('column-plot-2', 'children'),
     [
+        Output('column-plot-2', 'children'),
+        Output('stored-column-selector-2', 'data'),
+    ], [
         Input('column-selector', 'value'),
         Input('column-selector-2', 'value'),
-        Input('stored-data', 'data'),
-        Input('stored-column-selector', 'data'),
-        Input('stored-column-selector-2', 'data')
+    ], [
+        State('stored-column-selector', 'data'),
+        State('stored-column-selector-2', 'data'),
+        State('stored-data', 'data'),
     ]
 )
-def update_column_analysis_2(selected_column, selected_column_2, data, stored_column, stored_column_2):
+def update_column_analysis_2(
+    selected_column, selected_column_2,
+    stored_column, stored_column_2,
+    data,
+):
 
     if selected_column is None and stored_column is not None:
         selected_column = stored_column
@@ -337,9 +355,9 @@ def update_column_analysis_2(selected_column, selected_column_2, data, stored_co
 
         plot = dcc.Graph(figure=fig)
 
-        return plot
+        return plot, selected_column_2
 
-    return None
+    return None, None
 
 
 @app.callback(
@@ -351,24 +369,24 @@ def update_column_analysis_2(selected_column, selected_column_2, data, stored_co
         Input('undo-button', 'n_clicks')],
     [
         State('column-selector', 'value'),
-        State('column-selector-2', 'value'),
+        # State('column-selector-2', 'value'),
         State('processing-selector', 'value'),
         State('stored-data', 'data'),
         State('stored-data-history', 'data'),
         State('stored-column-selector', 'data'),
-        State('stored-column-selector-2', 'data')
+        # State('stored-column-selector-2', 'data')
     ]
 )
 def update_or_undo_column_processing(
         apply_clicks,
         undo_clicks,
         selected_column,
-        selected_column_2,
+        # selected_column_2,
         processing,
         data,
         data_history,
         stored_column,
-        stored_column_2
+        # stored_column_2
 ):
 
     ctx = dash.callback_context
@@ -376,13 +394,13 @@ def update_or_undo_column_processing(
 
         if selected_column is None and stored_column is not None:
             selected_column = stored_column
-        elif selected_column is not None:
-            dcc.Store(id='stored-column-selector', data=selected_column)
+        # elif selected_column is not None:
+        #     dcc.Store(id='stored-column-selector', data=selected_column)
 
-        if selected_column_2 is None and stored_column_2 is not None:
-            selected_column_2 = stored_column_2
-        elif selected_column_2 is not None:
-            dcc.Store(id='stored-column-selector-2', data=selected_column_2)
+        # if selected_column_2 is None and stored_column_2 is not None:
+        #     selected_column_2 = stored_column_2
+        # elif selected_column_2 is not None:
+        #     dcc.Store(id='stored-column-selector-2', data=selected_column_2)
 
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
