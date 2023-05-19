@@ -169,6 +169,14 @@ webencodings = "*"
 css = ["tinycss2 (>=1.1.0,<1.2)"]
 
 [[package]]
+name = "blinker"
+version = "1.6.2"
+description = "Fast, simple object-to-object and broadcast signaling"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "build"
 version = "0.10.0"
 description = "A simple, correct Python build frontend"
@@ -187,6 +195,14 @@ test = ["pytest (>=6.2.4)", "filelock (>=3)", "pytest-cov (>=2.12)", "pytest-moc
 docs = ["furo (>=2021.08.31)", "sphinx (>=4.0,<5.0)", "sphinx-argparse-cli (>=1.5)", "sphinx-autodoc-typehints (>=1.10)"]
 typing = ["importlib-metadata (>=5.1)", "mypy (==0.991)", "tomli", "typing-extensions (>=3.7.4.3)"]
 virtualenv = ["virtualenv (>=20.0.35)"]
+
+[[package]]
+name = "cachelib"
+version = "0.9.0"
+description = "A collection of cache libraries in the same API interface."
+category = "main"
+optional = false
+python-versions = ">=3.7"
 
 [[package]]
 name = "cachetools"
@@ -336,6 +352,84 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "dash"
+version = "2.9.3"
+description = "A Python framework for building reactive web-apps. Developed by Plotly."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+dash-core-components = "2.0.0"
+dash-html-components = "2.0.0"
+dash-table = "5.0.0"
+Flask = ">=1.0.4"
+plotly = ">=5.0.0"
+
+[package.extras]
+celery = ["redis (>=3.5.3)", "celery[redis] (>=5.1.2)", "importlib-metadata (<5)"]
+ci = ["dash-flow-example (==0.0.5)", "dash-dangerously-set-inner-html", "flake8 (==3.9.2)", "flaky (==3.7.0)", "flask-talisman (==1.0.0)", "mimesis", "mock (==4.0.3)", "numpy", "preconditions", "pylint (==2.13.5)", "pytest-mock", "pytest-sugar (==0.9.6)", "pytest-rerunfailures", "black (==21.6b0)", "isort (==4.3.21)", "orjson (==3.5.4)", "pyarrow (<3)", "pandas (==1.1.5)", "xlrd (<2)", "black (==22.3.0)", "orjson (==3.6.7)", "pyarrow", "openpyxl", "pandas (>=1.4.0)", "xlrd (>=2.0.1)"]
+compress = ["flask-compress"]
+dev = ["coloredlogs (>=15.0.1)", "fire (>=0.4.0)", "PyYAML (>=5.4.1)"]
+diskcache = ["diskcache (>=5.2.1)", "multiprocess (>=0.70.12)", "psutil (>=5.8.0)"]
+testing = ["beautifulsoup4 (>=4.8.2)", "lxml (>=4.6.2)", "percy (>=2.0.2)", "pytest (>=6.0.2)", "requests[security] (>=2.21.0)", "selenium (>=3.141.0,<=4.2.0)", "waitress (>=1.4.4)", "multiprocess (>=0.70.12)", "psutil (>=5.8.0)", "dash-testing-stub (>=0.0.2)", "cryptography (<3.4)"]
+
+[[package]]
+name = "dash-bootstrap-components"
+version = "1.4.1"
+description = "Bootstrap themed components for use in Plotly Dash"
+category = "main"
+optional = false
+python-versions = ">=3.7, <4"
+
+[package.dependencies]
+dash = ">=2.0.0"
+
+[package.extras]
+pandas = ["numpy", "pandas"]
+
+[[package]]
+name = "dash-core-components"
+version = "2.0.0"
+description = "Core component suite for Dash"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "dash-extensions"
+version = "1.0.0"
+description = "Extensions for Plotly Dash."
+category = "main"
+optional = false
+python-versions = ">=3.8,<4"
+
+[package.dependencies]
+dash = ">=2.9.3"
+Flask-Caching = "2.0.2"
+jsbeautifier = ">=1.14.3,<2.0.0"
+more-itertools = ">=9.0.0,<10.0.0"
+
+[package.extras]
+mantine = ["dash-mantine-components (>=0.11.1,<0.12.0)"]
+
+[[package]]
+name = "dash-html-components"
+version = "2.0.0"
+description = "Vanilla HTML components for Dash"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "dash-table"
+version = "5.0.0"
+description = "Dash table"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "debugpy"
 version = "1.6.6"
 description = "An implementation of the Debug Adapter Protocol for Python"
@@ -376,6 +470,14 @@ test = ["pytest", "pytest-cov", "pytest-xdist", "pytest-mock", "flake8", "pep8-n
 toml = ["toml"]
 vault = ["hvac"]
 yaml = ["ruamel.yaml"]
+
+[[package]]
+name = "editorconfig"
+version = "0.12.3"
+description = "EditorConfig File Locator and Interpreter for Python"
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "et-xmlfile"
@@ -439,6 +541,38 @@ all = ["fiona"]
 calc = ["shapely"]
 s3 = ["boto3 (>=1.3.1)"]
 test = ["fiona", "pytest (>=7)", "pytest-cov", "pytz"]
+
+[[package]]
+name = "flask"
+version = "2.3.2"
+description = "A simple framework for building complex web applications."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+blinker = ">=1.6.2"
+click = ">=8.1.3"
+importlib-metadata = {version = ">=3.6.0", markers = "python_version < \"3.10\""}
+itsdangerous = ">=2.1.2"
+Jinja2 = ">=3.1.2"
+Werkzeug = ">=2.3.3"
+
+[package.extras]
+async = ["asgiref (>=3.2)"]
+dotenv = ["python-dotenv"]
+
+[[package]]
+name = "flask-caching"
+version = "2.0.2"
+description = "Adds caching support to Flask applications."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+cachelib = ">=0.9.0,<0.10.0"
+Flask = "<3"
 
 [[package]]
 name = "fonttools"
@@ -716,6 +850,14 @@ python-versions = ">=3.7"
 arrow = ">=0.15.0"
 
 [[package]]
+name = "itsdangerous"
+version = "2.1.2"
+description = "Safely pass data to untrusted environments and back."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "jedi"
 version = "0.18.2"
 description = "An autocompletion tool for Python that can be used for text editors."
@@ -772,6 +914,18 @@ description = "Lightweight pipelining with Python functions"
 category = "main"
 optional = false
 python-versions = ">=3.7"
+
+[[package]]
+name = "jsbeautifier"
+version = "1.14.7"
+description = "JavaScript unobfuscator and beautifier."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+editorconfig = ">=0.12.2"
+six = ">=1.13.0"
 
 [[package]]
 name = "jsonpointer"
@@ -2196,6 +2350,20 @@ optional = ["python-socks", "wsaccel"]
 test = ["websockets"]
 
 [[package]]
+name = "werkzeug"
+version = "2.3.4"
+description = "The comprehensive WSGI web application library."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+MarkupSafe = ">=2.1.1"
+
+[package.extras]
+watchdog = ["watchdog (>=2.3)"]
+
+[[package]]
 name = "widgetsnbextension"
 version = "4.0.5"
 description = "Jupyter interactive widgets for Jupyter Notebook"
@@ -2246,7 +2414,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.11"
-content-hash = "0dece6f0135f9c254e01ce18b995174333180ae5d5f375223953dae867166984"
+content-hash = "531c588226ee33bf811b17cbc27a07b7e86c617ee64b1b712fe3f89432a81c5e"
 
 [metadata.files]
 antlr4-python3-runtime = [
@@ -2319,9 +2487,17 @@ bleach = [
     {file = "bleach-6.0.0-py3-none-any.whl", hash = "sha256:33c16e3353dbd13028ab4799a0f89a83f113405c766e9c122df8a06f5b85b3f4"},
     {file = "bleach-6.0.0.tar.gz", hash = "sha256:1a1a85c1595e07d8db14c5f09f09e6433502c51c595970edc090551f0db99414"},
 ]
+blinker = [
+    {file = "blinker-1.6.2-py3-none-any.whl", hash = "sha256:c3d739772abb7bc2860abf5f2ec284223d9ad5c76da018234f6f50d6f31ab1f0"},
+    {file = "blinker-1.6.2.tar.gz", hash = "sha256:4afd3de66ef3a9f8067559fb7a1cbe555c17dcbe15971b05d1b625c3e7abe213"},
+]
 build = [
     {file = "build-0.10.0-py3-none-any.whl", hash = "sha256:af266720050a66c893a6096a2f410989eeac74ff9a68ba194b3f6473e8e26171"},
     {file = "build-0.10.0.tar.gz", hash = "sha256:d5b71264afdb5951d6704482aac78de887c80691c52b88a9ad195983ca2c9269"},
+]
+cachelib = [
+    {file = "cachelib-0.9.0-py3-none-any.whl", hash = "sha256:811ceeb1209d2fe51cd2b62810bd1eccf70feba5c52641532498be5c675493b3"},
+    {file = "cachelib-0.9.0.tar.gz", hash = "sha256:38222cc7c1b79a23606de5c2607f4925779e37cdcea1c2ad21b8bae94b5425a5"},
 ]
 cachetools = [
     {file = "cachetools-5.3.0-py3-none-any.whl", hash = "sha256:429e1a1e845c008ea6c85aa35d4b98b65d6a9763eeef3e37e92728a12d1de9d4"},
@@ -2563,6 +2739,30 @@ cycler = [
     {file = "cycler-0.11.0-py3-none-any.whl", hash = "sha256:3a27e95f763a428a739d2add979fa7494c912a32c17c4c38c4d5f082cad165a3"},
     {file = "cycler-0.11.0.tar.gz", hash = "sha256:9c87405839a19696e837b3b818fed3f5f69f16f1eec1a1ad77e043dcea9c772f"},
 ]
+dash = [
+    {file = "dash-2.9.3-py3-none-any.whl", hash = "sha256:a749ae1ea9de3fe7b785353a818ec9b629d39c6b7e02462954203bd1e296fd0e"},
+    {file = "dash-2.9.3.tar.gz", hash = "sha256:47392f8d6455dc989a697407eb5941f3bad80604df985ab1ac9d4244568ffb34"},
+]
+dash-bootstrap-components = [
+    {file = "dash-bootstrap-components-1.4.1.tar.gz", hash = "sha256:05c2e2767a8ab104fc950d15482d09dde59d21f1e9bd5809d30672e61b7f420c"},
+    {file = "dash_bootstrap_components-1.4.1-py3-none-any.whl", hash = "sha256:17c9e6b90ff27abd3fbd6fe54ea85987b155414a247010467ec904406dcd3657"},
+]
+dash-core-components = [
+    {file = "dash_core_components-2.0.0-py3-none-any.whl", hash = "sha256:52b8e8cce13b18d0802ee3acbc5e888cb1248a04968f962d63d070400af2e346"},
+    {file = "dash_core_components-2.0.0.tar.gz", hash = "sha256:c6733874af975e552f95a1398a16c2ee7df14ce43fa60bb3718a3c6e0b63ffee"},
+]
+dash-extensions = [
+    {file = "dash_extensions-1.0.0-py3-none-any.whl", hash = "sha256:4f50a48f6b300539c69f8e746d729084ede1218dbdbdb06283ddcd1fa9c879ca"},
+    {file = "dash_extensions-1.0.0.tar.gz", hash = "sha256:e7f41704e71ab736f72d009c59a5569c8aa4b89053a6b6db013db9f4eff1ace0"},
+]
+dash-html-components = [
+    {file = "dash_html_components-2.0.0-py3-none-any.whl", hash = "sha256:b42cc903713c9706af03b3f2548bda4be7307a7cf89b7d6eae3da872717d1b63"},
+    {file = "dash_html_components-2.0.0.tar.gz", hash = "sha256:8703a601080f02619a6390998e0b3da4a5daabe97a1fd7a9cebc09d015f26e50"},
+]
+dash-table = [
+    {file = "dash_table-5.0.0-py3-none-any.whl", hash = "sha256:19036fa352bb1c11baf38068ec62d172f0515f73ca3276c79dee49b95ddc16c9"},
+    {file = "dash_table-5.0.0.tar.gz", hash = "sha256:18624d693d4c8ef2ddec99a6f167593437a7ea0bf153aa20f318c170c5bc7308"},
+]
 debugpy = [
     {file = "debugpy-1.6.6-cp310-cp310-macosx_11_0_x86_64.whl", hash = "sha256:0ea1011e94416e90fb3598cc3ef5e08b0a4dd6ce6b9b33ccd436c1dffc8cd664"},
     {file = "debugpy-1.6.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dff595686178b0e75580c24d316aa45a8f4d56e2418063865c114eef651a982e"},
@@ -2593,6 +2793,10 @@ defusedxml = [
 dynaconf = [
     {file = "dynaconf-3.1.12-py2.py3-none-any.whl", hash = "sha256:a79d7b3ad4a35af9b576c49f11cd3b23a1b04b87b63a4e9f92cc82f2b0cafeeb"},
     {file = "dynaconf-3.1.12.tar.gz", hash = "sha256:11a60bcd735f82b8a47b288f99e4ffbbd08c6c130a7be93c5d03e93fc260a5e1"},
+]
+editorconfig = [
+    {file = "EditorConfig-0.12.3-py3-none-any.whl", hash = "sha256:6b0851425aa875b08b16789ee0eeadbd4ab59666e9ebe728e526314c4a2e52c1"},
+    {file = "EditorConfig-0.12.3.tar.gz", hash = "sha256:57f8ce78afcba15c8b18d46b5170848c88d56fd38f05c2ec60dbbfcb8996e89e"},
 ]
 et-xmlfile = [
     {file = "et_xmlfile-1.1.0-py3-none-any.whl", hash = "sha256:a2ba85d1d6a74ef63837eed693bcb89c3f752169b0e3e7ae5b16ca5e1b3deada"},
@@ -2631,6 +2835,14 @@ fiona = [
     {file = "Fiona-1.9.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d7e0f36484757baa8cd1c0602941e029ff992282776f9afae4c5b90f501ff005"},
     {file = "Fiona-1.9.1-cp39-cp39-win_amd64.whl", hash = "sha256:f98933b552adf0506799097934a6950de412288e7a50466144d04874d6f63fbc"},
     {file = "Fiona-1.9.1.tar.gz", hash = "sha256:3a3725e94840a387fef48726d60db6a6791563f366939d22378a4661f8941be7"},
+]
+flask = [
+    {file = "Flask-2.3.2-py3-none-any.whl", hash = "sha256:77fd4e1249d8c9923de34907236b747ced06e5467ecac1a7bb7115ae0e9670b0"},
+    {file = "Flask-2.3.2.tar.gz", hash = "sha256:8c2f9abd47a9e8df7f0c3f091ce9497d011dc3b31effcf4c85a6e2b50f4114ef"},
+]
+flask-caching = [
+    {file = "Flask-Caching-2.0.2.tar.gz", hash = "sha256:24b60c552d59a9605cc1b6a42c56cdb39a82a28dab4532bbedb9222ae54ecb4e"},
+    {file = "Flask_Caching-2.0.2-py3-none-any.whl", hash = "sha256:19571f2570e9b8dd9dd9d2f49d7cbee69c14ebe8cc001100b1eb98c379dd80ad"},
 ]
 fonttools = [
     {file = "fonttools-4.39.2-py3-none-any.whl", hash = "sha256:85245aa2fd4cf502a643c9a9a2b5a393703e150a6eaacc3e0e84bb448053f061"},
@@ -2700,6 +2912,10 @@ isoduration = [
     {file = "isoduration-20.11.0-py3-none-any.whl", hash = "sha256:b2904c2a4228c3d44f409c8ae8e2370eb21a26f7ac2ec5446df141dde3452042"},
     {file = "isoduration-20.11.0.tar.gz", hash = "sha256:ac2f9015137935279eac671f94f89eb00584f940f5dc49462a0c4ee692ba1bd9"},
 ]
+itsdangerous = [
+    {file = "itsdangerous-2.1.2-py3-none-any.whl", hash = "sha256:2c2349112351b88699d8d4b6b075022c0808887cb7ad10069318a8b0bc88db44"},
+    {file = "itsdangerous-2.1.2.tar.gz", hash = "sha256:5dbbc68b317e5e42f327f9021763545dc3fc3bfe22e6deb96aaf1fc38874156a"},
+]
 jedi = [
     {file = "jedi-0.18.2-py2.py3-none-any.whl", hash = "sha256:203c1fd9d969ab8f2119ec0a3342e0b49910045abe6af0a3ae83a5764d54639e"},
     {file = "jedi-0.18.2.tar.gz", hash = "sha256:bae794c30d07f6d910d32a7048af09b5a39ed740918da923c6b780790ebac612"},
@@ -2719,6 +2935,9 @@ jmespath = [
 joblib = [
     {file = "joblib-1.2.0-py3-none-any.whl", hash = "sha256:091138ed78f800342968c523bdde947e7a305b8594b910a0fea2ab83c3c6d385"},
     {file = "joblib-1.2.0.tar.gz", hash = "sha256:e1cee4a79e4af22881164f218d4311f60074197fb707e082e803b61f6d137018"},
+]
+jsbeautifier = [
+    {file = "jsbeautifier-1.14.7.tar.gz", hash = "sha256:77993254db1ff6f84eb6e1d75e3b6b72cba2ef20813a585b2d81e8e5e3c713c6"},
 ]
 jsonpointer = [
     {file = "jsonpointer-2.3-py2.py3-none-any.whl", hash = "sha256:51801e558539b4e9cd268638c078c6c5746c9ac96bc38152d443400e4f3793e9"},
@@ -3735,6 +3954,10 @@ webencodings = [
 websocket-client = [
     {file = "websocket-client-1.5.1.tar.gz", hash = "sha256:3f09e6d8230892547132177f575a4e3e73cfdf06526e20cc02aa1c3b47184d40"},
     {file = "websocket_client-1.5.1-py3-none-any.whl", hash = "sha256:cdf5877568b7e83aa7cf2244ab56a3213de587bbe0ce9d8b9600fc77b455d89e"},
+]
+werkzeug = [
+    {file = "Werkzeug-2.3.4-py3-none-any.whl", hash = "sha256:48e5e61472fee0ddee27ebad085614ebedb7af41e88f687aaf881afb723a162f"},
+    {file = "Werkzeug-2.3.4.tar.gz", hash = "sha256:1d5a58e0377d1fe39d061a5de4469e414e78ccb1e1e59c0f5ad6fa1c36c52b76"},
 ]
 widgetsnbextension = [
     {file = "widgetsnbextension-4.0.5-py3-none-any.whl", hash = "sha256:eaaaf434fb9b08bd197b2a14ffe45ddb5ac3897593d43c69287091e5f3147bf7"},

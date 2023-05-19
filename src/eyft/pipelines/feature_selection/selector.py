@@ -3,22 +3,20 @@ import pandas as pd
 import xgboost as xgb
 import statsmodels.api as sm
 
-from typing import List, Dict, Hashable, Any, Set
+from typing import List, Dict, Hashable, Any, Optional
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import Lasso
+from sklearn.feature_selection import mutual_info_classif
 
 from ..feature_engineering import logger
-from ...utils.models import seed
+from ...utils.models import seed, is_binary, is_categorical
 from ...utils.constants import SEED, RF_PARAMS
 
 
 # TODO: Integrate feature selection into either random or bayesian
 #  search during model selection.
-# TODO: Arthur: Test feature selection functions. ERRORS may exist in functions which you may have to fix!
-# TODO: Implement CV feature selection
+# TODO: make sure these feature selection tools work for both
+#  continuous and categorical variables.
 
 
 def _set_list(vals) -> List[Any]:
@@ -36,7 +34,7 @@ def _sm_model(df_x: pd.DataFrame, y: np.ndarray):
     Either returns OLS or Logit GLMs. Logit
     is returned when y is categorical.
     """
-    if len(np.unique(y)) <= 2:
+    if is_binary(y):
         model = sm.Logit(y, df_x)
     else:
         model = sm.OLS(y, sm.add_constant(df_x))
@@ -50,7 +48,7 @@ def _rf_model(df_x: pd.DataFrame, y: np.ndarray):
     """
 
     # MODEL
-    if len(np.unique(y)) < 2:
+    if is_categorical(y):
         model = xgb.XGBClassifier(random_state=SEED, max_depth=3)
     else:
         model = xgb.XGBRegressor(**RF_PARAMS)
@@ -63,7 +61,7 @@ def forward_select(
     df: pd.DataFrame,
     y_col: str,
     cutoff: float = 0.05,
-    exclude_cols: List[str] = None
+    keep_cols: List[str] = None
 ) -> List[Hashable]:
     """
     In forward selection, we start with a null model and then start
@@ -85,7 +83,7 @@ def forward_select(
     y = df[y_col].values
     df_x = df.loc[:, ~df.columns.isin([y_col])]
 
-    features = _set_list(exclude_cols)
+    features = _set_list(keep_cols)
     initial_features = df_x.columns.to_list()
 
     while len(initial_features) > 0:
@@ -120,7 +118,7 @@ def backward_eliminate(
     df: pd.DataFrame,
     y_col: str,
     cutoff: float = 0.05,
-    exclude_cols: List[str] = None,
+    keep_cols: List[str] = None,
 ) -> List[Hashable]:
     """
     In backward elimination, we start with the full model
@@ -138,8 +136,8 @@ def backward_eliminate(
     df_x = df.loc[:, ~df.columns.isin([y_col])]
 
     features = df_x.columns.tolist()
-    exclude_cols = _set_list(exclude_cols)
-    remaining_features = list(set(features) - set(exclude_cols))
+    keep_cols = _set_list(keep_cols)
+    remaining_features = list(set(features) - set(keep_cols))
 
     while len(remaining_features) > 0:
 
@@ -160,7 +158,7 @@ def backward_eliminate(
         else:
             break
 
-    remaining_features.extend(exclude_cols)
+    remaining_features.extend(keep_cols)
     return remaining_features
 
 
@@ -169,7 +167,7 @@ def step_wise_select(
     y_col: str,
     cutoff_in: float = 0.05,
     cutoff_out: float = 0.05,
-    exclude_cols: List[str] = None,
+    keep_cols: List[str] = None,
 ) -> List[Hashable]:
     """
     It is similar to forward selection but the difference is
@@ -189,8 +187,8 @@ def step_wise_select(
     y = df[y_col].values
     df_x = df.loc[:, ~df.columns.isin([y_col])]
 
-    exclude_cols = _set_list(exclude_cols)
-    features = exclude_cols.copy()
+    keep_cols = _set_list(keep_cols)
+    features = keep_cols.copy()
     initial_features = df_x.columns.to_list()
 
     while len(initial_features) > 0:
@@ -217,7 +215,7 @@ def step_wise_select(
             )
 
             # BACKWARD ------------------------------------------------------
-            remaining_features = list(set(features) - set(exclude_cols))
+            remaining_features = list(set(features) - set(keep_cols))
 
             while len(remaining_features) > 0:
 
@@ -249,7 +247,7 @@ def random_forest(
     df: pd.DataFrame,
     y_col: str,
     cutoff: float = None,
-    exclude_cols: List[str] = None,
+    keep_cols: List[str] = None,
     importance_type: str = 'gain',
 ) -> List[str]:
     """
@@ -270,9 +268,9 @@ def random_forest(
     """
 
     y = df[y_col].values
-    exclude_cols = _set_list(exclude_cols)
+    keep_cols = _set_list(keep_cols)
     features = list(
-        set(df.columns.tolist()) - {*exclude_cols, y_col}
+        set(df.columns.tolist()) - {*keep_cols, y_col}
     )
     df_x = df.loc[:, features]
 
@@ -302,7 +300,7 @@ def random_forest(
         else:
             break  # since sorted in descending order
 
-    imp_features.extend(exclude_cols)  # include required cols
+    imp_features.extend(keep_cols)  # include required cols
     return imp_features
 
 
@@ -310,7 +308,7 @@ def lasso(
         df: pd.DataFrame,
         y_col: str,
         cutoff: float = 0,
-        exclude_cols: List[str] = None,
+        keep_cols: List[str] = None,
         alpha: float = 0.05
 ) -> List[str]:
     """
@@ -324,9 +322,9 @@ def lasso(
     )
 
     y = df[y_col].values
-    exclude_cols = _set_list(exclude_cols)
+    keep_cols = _set_list(keep_cols)
     features = list(
-        set(df.columns.tolist()) - {*exclude_cols, y_col}
+        set(df.columns.tolist()) - {*keep_cols, y_col}
     )
     df_x = df.loc[:, features]
 
@@ -341,58 +339,63 @@ def lasso(
         if importance[i] > cutoff:
             selected_features.append(df_x.columns[i])
 
-    selected_features.extend(exclude_cols)  # include required cols
+    selected_features.extend(keep_cols)  # include required cols
     return selected_features
 
-# TODO final pearson
-# TODO make sure exclude works as expected
 
-
-
-def pearson_xy(
+def yx_correlation(
     df: pd.DataFrame,
     y_col: str,
-    cutoff: float = 0.80,
-    exclude_cols: List[str] = None,
+    cutoff: float = 0.5,
+    keep_cols: List[str] = None,
+    correlation_measure: str = 'pearson',
 ) -> List[str]:
     """
     Keep features that have a Pearson
-    correlation lower than the cutoff.
+    correlation higher than the cutoff with
+    the y_col.
     """
 
-    # Select all columns if exclude_cols is not specified
-    if not exclude_cols:
-        exclude_cols = []
+    if correlation_measure not in ['pearson', 'kendall', 'spearman']:
+        raise ValueError("Invalid correlation measure. Must be 'pearson', 'kendall', or 'spearman'.")
+
+    # Select all columns if keep_cols is not specified
+    if not keep_cols:
+        keep_cols = []
 
     # Compute the correlation matrix using Pearson correlation
-    corr_matrix = df.drop(exclude_cols, axis=1).corr(method='pearson')
+    corr_matrix = df.drop(keep_cols, axis=1).corr(method=correlation_measure)
 
-    # Select the features that are highly correlated with the target column
+    # Select the features that are highly correlated with the y_col column
     corr_with_target = corr_matrix[y_col]
     high_corr_features = corr_with_target[abs(corr_with_target) > cutoff].index.tolist()
     high_corr_features.remove(y_col)
 
-    # Add back any columns specified in exclude_cols
-    high_corr_features += exclude_cols
+    # Add back any columns specified in keep_cols
+    high_corr_features += keep_cols
 
     return high_corr_features
 
 
-def pearson_xs(
+def xs_correlation(
     df: pd.DataFrame,
     y_col: str,
     cutoff: float = 0.80,
-    exclude_cols: List[str] = None
+    keep_cols: List[str] = None,
+    correlation_measure: str = 'pearson'
 ) -> List[str]:
     """
     Remove features that are highly correlated with each other
-    using Pearson correlation coefficient.
+    using the specified correlation measure.
 
-    Returns a list of the remaining feature names.
+    Returns a list of the remaining (not correlated) features.
     """
 
+    if correlation_measure not in ['pearson', 'kendall', 'spearman']:
+        raise ValueError("Invalid correlation measure. Must be 'pearson', 'kendall', or 'spearman'.")
+
     # Compute the correlation matrix using Pearson correlation
-    corr_matrix = df.drop(y_col, axis=1).corr(method='pearson')
+    corr_matrix = df.drop(y_col, axis=1).corr(method=correlation_measure)
 
     # Find pairs of variables with a correlation coefficient higher than the cutoff
     high_corr_pairs = []
@@ -405,87 +408,56 @@ def pearson_xs(
     to_drop = set()
     for col1, col2 in high_corr_pairs:
         if col1 not in to_drop and col2 not in to_drop:
-            corr_with_target1 = abs(df[col1].corr(df[y_col], method='pearson'))
-            corr_with_target2 = abs(df[col2].corr(df[y_col], method='pearson'))
+            corr_with_target1 = abs(df[col1].corr(df[y_col], method=correlation_measure))
+            corr_with_target2 = abs(df[col2].corr(df[y_col], method=correlation_measure))
             if corr_with_target1 > corr_with_target2:
                 to_drop.add(col2)
             else:
                 to_drop.add(col1)
 
-    # Remove excluded columns from the list of columns to be dropped
-    if exclude_cols:
-        to_drop = to_drop - set(exclude_cols)
+    # Remove keep columns (if present) from the list of columns to be dropped
+    if keep_cols:
+        to_drop = to_drop - set(keep_cols)
 
     # Return the remaining feature names without the Y column
-    return list(set(df.columns) - to_drop - set([y_col]))
+    return list(set(df.columns) - to_drop - {y_col})
 
-def pearson(
+
+def complete_correlation(
     df: pd.DataFrame,
     y_col: str,
-    cutoff: float = 0.80,
-    exclude_cols: List[str] = None,
-) -> str:
+    x_cutoff: float = 0.80,
+    y_cutoff: float = 0.5,
+    keep_cols: List[str] = None,
+    correlation_measure: str = 'pearson'
+) -> List[str]:
     """
-    Keep features that have a Pearson correlation lower than the cutoff and
-    remove features that are highly correlated with each other using Pearson correlation coefficient.
-    Return a single highly correlated feature with the target column y_col.
+    Combined XS and YS correlation feature check.
     """
 
-    # Select all columns if exclude_cols is not specified
-    if exclude_cols is None:
-        exclude_cols = []
+    features = xs_correlation(
+        df, y_col=y_col, cutoff=x_cutoff,
+        keep_cols=keep_cols,
+        correlation_measure=correlation_measure,
+    )
 
-    # Compute the correlation matrix using Pearson correlation
-    corr_matrix = df.corr(method='pearson')
+    df_subset = df[[*features, y_col]]
 
-    # Select the features that are highly correlated with the target column
-    corr_with_target = corr_matrix[y_col]
-    high_corr_features = corr_with_target[abs(corr_with_target) > cutoff].index.tolist()
-    high_corr_features.remove(y_col)
+    features = yx_correlation(
+        df_subset, y_col=y_col,
+        cutoff=y_cutoff,
+        keep_cols=keep_cols,
+        correlation_measure=correlation_measure,
+    )
 
-    # Include excluded columns in the high_corr_features list
-    high_corr_features += exclude_cols
+    return features
 
-    # Find pairs of variables with a correlation coefficient higher than the cutoff
-    high_corr_pairs = []
-    for i in range(len(corr_matrix.columns)):
-        for j in range(i):
-            if abs(corr_matrix.iloc[i, j]) > cutoff:
-                high_corr_pairs.append((corr_matrix.columns[i], corr_matrix.columns[j]))
-
-    # Determine which variable to drop from each high-correlation pair
-    to_drop = set()
-    for col1, col2 in high_corr_pairs:
-        if col1 not in to_drop and col2 not in to_drop:
-            corr_with_target1 = abs(df[col1].corr(df[y_col], method='pearson'))
-            corr_with_target2 = abs(df[col2].corr(df[y_col], method='pearson'))
-            if corr_with_target1 > corr_with_target2:
-                to_drop.add(col2)
-            else:
-                to_drop.add(col1)
-
-    # Add back any columns specified in exclude_cols
-    to_drop = to_drop - set(exclude_cols)
-
-    # Drop one of the highly correlated features
-    for feature in high_corr_features:
-        if feature in to_drop:
-            corr_values = corr_matrix[feature][high_corr_features].drop(feature)
-            if abs(corr_values).max() > cutoff:
-                drop_feature = corr_values.abs().idxmax()
-                if feature != y_col:
-                    df.drop(drop_feature, axis=1, inplace=True)
-                    high_corr_features.remove(drop_feature)
-                    break
-
-    # Return the list of features
-    return high_corr_features
 
 def vif(
     df: pd.DataFrame,
     y_col: str,
     cutoff: float = 5,
-    exclude_cols: List[str] = None,
+    keep_cols: List[str] = None,
 ) -> List[str]:
     """
     Keep features that have a VIF (Variance Inflation Factor)
@@ -493,26 +465,26 @@ def vif(
     """
 
     rd = 1
-    exclude_cols = _set_list(exclude_cols)
+    keep_cols = _set_list(keep_cols)
     max_vif_feature = 'None'  # kept as string so that while loop starts
-    features = [col for col in df.columns if col not in [y_col]]
+    features = [col for col in df.columns if col != y_col]
 
     logger.info('\nRemoving collinear variables...')
     while max_vif_feature is not None:
 
         # DETERMINE VIF:
         _x_df = sm.add_constant(df[features])
-        vif = [
+        vif_values = [
             variance_inflation_factor(_x_df.values, j)
             for j in range(_x_df.shape[1])
         ]
         # start from 1: to ignore constant column
-        vif_df = pd.DataFrame({'vif': vif[1:]}, index=features).T
+        vif_df = pd.DataFrame({'vif': vif_values[1:]}, index=features).T
 
         # DETERMINE MAX VIF:
         max_vif = cutoff
         max_vif_feature = None
-        remaining_cols = [col for col in vif_df.columns if col not in exclude_cols]
+        remaining_cols = [col for col in vif_df.columns if col not in keep_cols]
         for column in remaining_cols:
             _vif = float(vif_df[column]['vif'])
             logger.info(f"ROUND {round}: {column} vif = {vif}")
@@ -532,18 +504,121 @@ def vif(
     return features
 
 
+def mutual_info(
+        df: pd.DataFrame,
+        y_col: str,
+        mi_cutoff: float = 0.2,
+        keep_cols: Optional[List[str]] = None
+) -> List[str]:
+    """
+    Selects features from a pandas DataFrame based on mutual information with the target variable.
+
+    Args:
+        df (pd.DataFrame): Input pandas DataFrame containing features and target variable.
+        y_col (str): The name of the target variable in the DataFrame.
+        mi_cutoff (float): The minimum mutual information score required to keep a feature.
+        keep_cols (Optional[List[str]], optional): List of column names to always keep. Defaults to None.
+
+    Returns:
+        List[str]: A list of selected feature names.
+    """
+
+    # Separate features and y_col variable
+    keep_cols = _set_list(keep_cols)
+    features = [
+        col for col in df.columns if col not in [*keep_cols, y_col]
+    ]
+
+    # Calculate mutual information for each feature
+    mi_scores = mutual_info_classif(df[features], df[y_col])
+
+    # Create a DataFrame with feature names and their corresponding MI scores
+    mi_df = pd.DataFrame({"Feature": features, "MI_Score": mi_scores})
+
+    # Sort features by MI scores in descending order
+    mi_df = mi_df.sort_values("MI_Score", ascending=False)
+
+    # Keep features with MI scores above the specified cutoff
+    selected_features = mi_df[mi_df["MI_Score"] > mi_cutoff]["Feature"].tolist()
+
+    # Add specified columns to always keep (if provided)
+    selected_features += keep_cols
+
+    return selected_features
+
+
+def missing_ratio(
+    df: pd.DataFrame,
+    y_col: str,
+    cutoff: float = 0.70,
+    keep_cols: List[str] = None
+) -> List[str]:
+    """
+    Remove features with a missing ratio higher
+    than the specified cutoff (e.g. if more
+    than 70% are null remove feature for instance)
+
+    Returns a list of the remaining features.
+    """
+
+    # Calculate the missing ratio for each feature
+    keep_cols = _set_list(keep_cols)
+    features = [col for col in df.columns if col not in [*keep_cols, y_col]]
+    missing_ratios = df[features].isnull().mean()
+
+    selected_features = [
+        col for col, _missing_ratio in missing_ratios.items()
+        if _missing_ratio <= cutoff
+    ]
+
+    selected_features += keep_cols
+
+    return selected_features
+
+
+def variance(
+    df: pd.DataFrame,
+    y_col: str,
+    variance_cutoff: float = 0.01,
+    keep_cols: List[str] = None
+) -> List[str]:
+    """
+    Remove features with a variance lower than the specified cutoff.
+
+    Returns a list of the remaining features.
+    """
+
+    # Calculate the variance for each feature
+    keep_cols = _set_list(keep_cols)
+    features = [col for col in df.columns if col not in [*keep_cols, y_col]]
+    variances = df[features].var()
+
+    # Filter features with a variance higher than the cutoff
+    selected_features = [
+        col for col, _variance in variances.items()
+        if _variance >= variance_cutoff
+    ]
+
+    selected_features += keep_cols
+
+    return selected_features
+
+
 class Selector(object):
 
     MAPPER = {
+        "variance": variance,
+        "missing": missing_ratio,
+        "mutual_info": mutual_info,
         "rf": random_forest,
         "forward": forward_select,
         "backward": backward_eliminate,
         "step": step_wise_select,
         "lasso": lasso,
         "vif": vif,
-        "pearson": pearson,
-        "pearson_xy": pearson_xy,
-        "pearson_xs": pearson_xs
+        "complete_correlation": complete_correlation,
+        "ys_correlation": yx_correlation,
+        "xs_correlation": xs_correlation,
     }
 
     def __init__(self, df: pd.DataFrame, target_col: str):
@@ -597,7 +672,7 @@ class Selector(object):
         key: str,
         n_eval: int = 10,
         train_prc: float = 0.8,
-        cutoff=None,
+        cv_cutoff=None,
         **kwargs: Dict[str, str]
     ):
         """
@@ -621,7 +696,7 @@ class Selector(object):
 
         n_obs = self._df.shape[0]
         n_train = int(n_obs * train_prc)
-        cutoff = cutoff if cutoff is not None else int(n_eval/2)
+        cv_cutoff = cv_cutoff if cv_cutoff is not None else int(n_eval/2)
 
         fs_func = self.MAPPER[_key]
         feature_ranks = {
@@ -648,7 +723,7 @@ class Selector(object):
         fimps = list(feature_ranks.items())
         fimps.sort(key=lambda x: x[1], reverse=True)
         self._best_features = [
-            _feature for _feature, imp in fimps if imp > cutoff
+            _feature for _feature, imp in fimps if imp > cv_cutoff
         ]
         logger.info(
             f"FINAL CV SELECTION COUNTS: {fimps} | Selecting "

@@ -4,7 +4,7 @@ import pandas as pd
 from typing import Tuple, Dict, Any
 
 from .selector import Selector
-from ..feature_engineering import logger
+from ..feature_selection import logger
 
 
 def select_best_features(

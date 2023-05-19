@@ -4,8 +4,6 @@ from kedro.pipeline import Pipeline, node, pipeline
 from .nodes import select_best_features
 
 
-# TODO: make it so that it could do multiple.
-# TODO: Ensure that you can specify which cols to keep.
 def create_pipeline(
     inputs: Dict[str, Any] = {
         "train": "complete_features_train",

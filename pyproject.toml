@@ -24,6 +24,12 @@ pytest = "^7.2.2"
 statsmodels = "^0.13.5"
 xgboost = "^1.7.5"
 geopy = "^2.3.0"
+Flask = "^2.3.2"
+dash = "^2.9.3"
+dash-bootstrap-components = "^1.4.1"
+dash-core-components = "^2.0.0"
+dash-html-components = "^2.0.0"
+dash-extensions = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"

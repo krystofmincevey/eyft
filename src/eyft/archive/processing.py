@@ -35,7 +35,7 @@ def process_glm(
 ) -> pd.DataFrame:
     """
     :param df:
-    :param ycol: target column
+    :param ycol: y_col column
     :param md_kwargs:
         cat_impute_key: str = 'mode',
         num_impute_key: str = 'median'

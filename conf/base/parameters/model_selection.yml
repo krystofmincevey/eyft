@@ -1,0 +1,7 @@
+model2params: {
+    'LogisticRegression': {'C': [0.1]},
+    'DecisionTreeClassifier': {'max_depth': [None, 5]}
+}  # Should be model_name: param_dict parring.
+scoring: 'accuracy'
+n_iter: 1
+cv: 2

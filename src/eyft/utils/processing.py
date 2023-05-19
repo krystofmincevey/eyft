@@ -3,15 +3,32 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import requests
 
 from typing import List, Dict, Union
 from scipy import stats
+
 
 from ..utils import logger
 
 
 # TODO: Check which things are done in place
 #   and potentially remove return statements.
+
+
+def translate_text(
+    text: str,
+    source_lang: str = 'fr',
+    target_lang: str = 'en',
+):
+    url = "https://api.mymemory.translated.net/get"
+    params = {
+        "q": text,
+        "langpair": f"{source_lang}|{target_lang}"
+    }
+    response = requests.get(url, params=params)
+    translation = response.json()["responseData"]["translatedText"]
+    return translation
 
 
 def process_str(
@@ -36,7 +53,7 @@ def merge(
     """
     :param df_left: dataset we want to enrich
     :param df_right: dataset used to add information to the left dataset
-    :param left_key: field used for the matching in the target table
+    :param left_key: field used for the matching in the y_col table
     :param right_key: field used for the matching in the right table
     :param columns: columns from the right table we want to add into the left table
     :param merge_type: what type of join you want to do
