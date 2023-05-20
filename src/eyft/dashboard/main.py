@@ -1,10 +1,12 @@
 import base64
 import io
+import sys
 import dash
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import urllib
 
 from typing import Union
 
@@ -14,17 +16,57 @@ from dash_extensions.enrich import (
     Input, Output, State,
 )
 
+from ..pipelines.data_processing.processor import (
+    boxcox_normalise, cap, cap_3std, cat_dummies,
+    categorize, floor, floor_and_cap, mean_impute,
+    median_impute, min_max_scale, mode_impute,
+    segment, z_normalise,
+)
+from ..pipelines.feature_engineering.transform import (
+    log_transform, inverse, multiply_by, divide_by
+)
+
+
+EXTERNAL_STYLESHEETS = [dbc.themes.BOOTSTRAP]
 
 PROCESSING_OPTIONS = [
-    {'label': 'Mean Imputation', 'value': 'mean'},
-    {'label': 'Median Imputation', 'value': 'median'},
-    {'label': 'Mode Imputation', 'value': 'mode'},
-    {'label': 'Min-Max Scaling', 'value': 'minmax'},
-    {'label': 'Z-Normalization', 'value': 'znorm'},
-    {'label': 'Outlier Capping', 'value': 'outliers'}
+    {'label': 'Mean Imputation', 'value': 'mean_impute'},
+    {'label': 'Median Imputation', 'value': 'median_impute'},
+    {'label': 'Mode Imputation', 'value': 'mode_impute'},
+    {'label': 'Min-Max Scaling', 'value': 'min_max_scale'},
+    {'label': 'Z-Normalization', 'value': 'z_normalise'},
+    {'label': 'Outlier Removal: 3 STD', 'value': 'cap_3std'},
+    {'label': 'Floor: 1prc', 'value': 'floor'},
+    {'label': 'Cap: 99prc', 'value': 'cap'},
+    {"label": "Cap and Floor: 99prc and 1prc", 'value': 'floor_and_cap'},
+    {'label': 'Categorize', 'value': 'categorize'},
+    {'label': 'Segment', 'value': 'segment'},
+    {'label': 'Box-Cox Normalize', 'value': 'boxcox_normalise'},
+    {'label': 'Log Transform', 'value': 'log'},
+    {'label': 'Log Transform', 'value': 'inverse'},
+    {'label': 'Multiply: Col1 x Col2', 'value': 'multiply_by'},
+    {'label': 'Divide: Col1 / Col2', 'value': 'divide_by'},
 ]
 
-external_stylesheets = [dbc.themes.BOOTSTRAP]
+PROCESSING_MAPPER = {
+    'boxcox_normalise': boxcox_normalise,
+    'cap': cap,
+    'cap_3std': cap_3std,
+    'cat_dummies': cat_dummies,
+    'categorize': categorize,
+    'floor': floor,
+    'floor_and_cap': floor_and_cap,
+    'mean_impute': mean_impute,
+    'median_impute': median_impute,
+    'min_max_scale': min_max_scale,
+    'mode_impute': mode_impute,
+    'segment': segment,
+    'z_normalise': z_normalise,
+    "log": log_transform,
+    "multiply_by": multiply_by,
+    "divide_by": divide_by,
+    'inverse': inverse,
+}
 
 
 def parse_contents(contents, filename) -> Union[pd.DataFrame, html.Div]:
@@ -45,6 +87,66 @@ def parse_contents(contents, filename) -> Union[pd.DataFrame, html.Div]:
         ])
 
     return df
+
+
+def table_type(df_column):
+    # Note - this only works with Pandas >= 1.0.0
+
+    if sys.version_info < (3, 0):  # Pandas 1.0.0 does not support Python 2
+        return 'any'
+
+    if isinstance(df_column.dtype, pd.DatetimeTZDtype):
+        return 'datetime',
+    elif (isinstance(df_column.dtype, pd.StringDtype) or
+            isinstance(df_column.dtype, pd.BooleanDtype) or
+            isinstance(df_column.dtype, pd.CategoricalDtype) or
+            isinstance(df_column.dtype, pd.PeriodDtype)):
+        return 'text'
+    elif (isinstance(df_column.dtype, pd.SparseDtype) or
+            isinstance(df_column.dtype, pd.IntervalDtype) or
+            isinstance(df_column.dtype, pd.Int8Dtype) or
+            isinstance(df_column.dtype, pd.Int16Dtype) or
+            isinstance(df_column.dtype, pd.Int32Dtype) or
+            isinstance(df_column.dtype, pd.Int64Dtype)):
+        return 'numeric'
+    else:
+        return 'any'
+
+
+def create_conditional_style(
+    df: pd.DataFrame, padding: int = 30,
+    pixel_for_char: int = 12,
+    max_width_pixels: int = 720  # Maximum width as half the page width (assuming 75% scaling)
+):
+    style = []
+    for col in df.columns:
+        if df[col].dtype == 'object':
+            try:
+                df[col] = pd.to_datetime(df[col])
+            except ValueError:
+                pass
+        col_list = df[col].values.tolist()
+        col_list = [s if type(s) is str else str(s) for s in col_list]
+        col_list.append(col)
+        name_length = len(max(col_list, key=len))
+        pixel = padding + round(name_length * pixel_for_char)
+        pixel = min(pixel, max_width_pixels)  # Cap the width to the maximum value
+        pixel = str(pixel) + 'px'
+        if pd.api.types.infer_dtype(df[col]) == 'string' or \
+                pd.api.types.infer_dtype(df[col]) == 'boolean' and \
+                not pd.api.types.is_datetime64_any_dtype(df[col]):
+            style.append(
+                {
+                    'if': {'column_id': col},
+                    'minWidth': pixel,
+                    'maxWidth': pixel,
+                    'width': pixel,
+                    'textAlign': 'left',
+                }
+            )
+        else:
+            style.append({'if': {'column_id': col}, 'minWidth': pixel})
+    return style
 
 
 app = DashProxy(
@@ -118,6 +220,7 @@ def upload_data(content, name):
 def generate_layout(data, file_name, stored_column, stored_column_2):
     if data is not None:
         df = pd.DataFrame(data)
+        preview_limit = 1000
 
         column_styles = []
         colors = {
@@ -134,22 +237,20 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
             dbc.Card([
                 dbc.CardHeader("Data Preview"),
                 dbc.CardBody([
-                    html.Div([f'Viewing: {file_name}']),
+                    html.Div([f'Snapshot of {preview_limit} rows from {file_name}:']),
                     dash_table.DataTable(
                         id='table_data',
-                        data=df.head(1000).to_dict('records'),
-                        columns=[{'name': col_name, 'id': col_name} for col_name in df.columns],
+                        data=df.head(preview_limit).to_dict('records'),
+                        columns=[
+                            {'name': i, 'id': i, 'type': table_type(df[i])} for i in df.columns
+                        ],
                         fixed_rows={'headers': True},
-                        # style_cell={'width': '150px'},  # adjust as needed
-                        # style_table={'height': '300px', 'overflowY': 'auto'},
-                        # style_header={
-                        #     'textOverflow': 'ellipsis',  # use 'auto' for text wrapping
-                        # },
                         style_table={'overflow': 'scroll', 'height': 550},
                         style_cell={
-                            'textAlign': 'center', 'minWidth': 95, 'maxWidth': 95, 'width': 95,
-                            'font_size': '12px', 'whiteSpace': 'normal', 'height': 'auto'
+                            'font_size': '12px', 'whiteSpace': 'normal',
+                            'height': 'auto'
                         },
+                        style_cell_conditional=create_conditional_style(df),
                         style_header={'backgroundColor': '#305D91', 'padding': '10px', 'color': '#FFFFFF'},
                         style_data_conditional=column_styles,
                         editable=True,  # allow editing of data inside all cells
@@ -163,21 +264,34 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
                         selected_rows=[],  # indices of rows that user selects
                         page_action="native",
                     ),
-                    html.Div([
-                        html.Div('Color legend:', style={'font-weight': 'bold'}),
-                        html.Div('Integer columns',
-                                 style={'backgroundColor': colors['int64'], 'display': 'inline-block',
-                                        'margin': '5px'}),
-                        html.Div('Float columns',
-                                 style={'backgroundColor': colors['float64'], 'display': 'inline-block',
-                                        'margin': '5px'}),
-                        html.Div('String columns',
-                                 style={'backgroundColor': colors['object'], 'display': 'inline-block',
-                                        'margin': '5px'}),
-                        html.Div('Date columns',
-                                 style={'backgroundColor': colors['datetime64'], 'display': 'inline-block',
-                                        'margin': '5px'})
-                    ])
+                    dbc.Row([
+                        dbc.Col(
+                            html.Div([
+                                html.Div('Color legend:', style={'font-weight': 'bold'}),
+                                html.Div('Integer columns',
+                                         style={'backgroundColor': colors['int64'], 'display': 'inline-block',
+                                                'margin': '5px'}),
+                                html.Div('Float columns',
+                                         style={'backgroundColor': colors['float64'], 'display': 'inline-block',
+                                                'margin': '5px'}),
+                                html.Div('String columns',
+                                         style={'backgroundColor': colors['object'], 'display': 'inline-block',
+                                                'margin': '5px'}),
+                                html.Div('Date columns',
+                                         style={'backgroundColor': colors['datetime64'], 'display': 'inline-block',
+                                                'margin': '5px'})
+                            ]), width=11, md=11
+                        ),
+                        dbc.Col(
+                            html.Div([
+                                dbc.Button("i", id="filter-help-button", color="info"),
+                                dbc.Tooltip(
+                                    "When filtering numeric columns please use math operators: i.e. =, <, and >.",
+                                    target="filter-help-button",
+                                ),
+                            ]), width=1, md=1, className='text-right'
+                        ),
+                    ], justify='between'),
                 ])
             ], className='mb-3'),  # add some margin at the bottom
 
@@ -191,7 +305,11 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
                         value=df.columns.tolist(),  # all columns selected by default
                         placeholder="Select columns to keep...",
                     ),
-                    html.Button('Drop Unselected Columns', id='drop-columns-button', n_clicks=0)
+                    html.Br(),
+                    dbc.Row([
+                        dbc.Col(html.Button('Drop Unselected Columns', id='drop-columns-button', n_clicks=0)),
+                        dbc.Col(html.Button('Undo', id='undo-drop-button', n_clicks=0))
+                    ]),
                 ]),
             ], className='mb-3'),
 
@@ -238,11 +356,27 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
                     html.Br(),
                     dbc.Row([
                         dbc.Col(html.Button('Apply', id='apply-button', n_clicks=0)),
-                        dbc.Col(html.Button('Undo', id='undo-button', n_clicks=0))
+                        dbc.Col(html.Button('Undo', id='undo-processing-button', n_clicks=0))
                     ]),
                     html.Br(),
                 ])
-            ])
+            ]),
+
+            dbc.Card([
+                dbc.CardHeader(""),
+                dbc.CardBody([
+                    dbc.Row(
+                        dbc.Col(
+                            html.A(
+                                id='download-link', download='data.csv', href='', target='_blank',
+                                children=[dbc.Button('Download Data', id='download-button', color="danger")]
+                            ),
+                            width={'size': 12, 'offset': 4}
+                        ),
+                        justify='center'
+                    )
+                ])
+            ]),
         ]
     else:
         children = [
@@ -265,16 +399,24 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
 )
 def update_column_analysis(selected_column, stored_column, data):
 
+    # Ensure that selected and stored columns are in df
+    if data is not None:
+        df = pd.DataFrame(data)
+        if selected_column not in df.columns:
+            selected_column = None
+        if stored_column not in df.columns:
+            stored_column = None
+
+    # Either use selected or stored cols
     if selected_column is None and stored_column is not None:
         selected_column = stored_column
     elif selected_column is not None:
         dcc.Store(id='stored-column-selector', data=selected_column)
 
     if (selected_column is not None) and (data is not None):
-        df = pd.DataFrame(data)
+        # df = pd.DataFrame(data)
 
         # Check if the selected column is numeric or non-numeric
-
         num_unique = df[selected_column].nunique()
         num_missing = df[selected_column].isna().sum()
         if pd.api.types.is_numeric_dtype(df[selected_column]):
@@ -338,7 +480,19 @@ def update_column_analysis_2(
     stored_column, stored_column_2,
     data,
 ):
+    # Ensure that selected and stored columns are in df
+    if data is not None:
+        df = pd.DataFrame(data)
+        if selected_column not in df.columns:
+            selected_column = None
+        if stored_column not in df.columns:
+            stored_column = None
+        if selected_column_2 not in df.columns:
+            selected_column_2 = None
+        if stored_column_2 not in df.columns:
+            stored_column_2 = None
 
+    # Either use selected or stored cols
     if selected_column is None and stored_column is not None:
         selected_column = stored_column
 
@@ -348,7 +502,7 @@ def update_column_analysis_2(
         dcc.Store(id='stored-column-selector-2', data=selected_column_2)
 
     if (selected_column is not None) and (selected_column_2 is not None) and (data is not None):
-        df = pd.DataFrame(data)
+        # df = pd.DataFrame(data)
 
         # Generate scatter plot
         fig = px.scatter(df, x=selected_column_2, y=selected_column)
@@ -365,28 +519,60 @@ def update_column_analysis_2(
         Output('stored-data', 'data'),
         Output('stored-data-history', 'data'),
     ], [
+        Input('drop-columns-button', 'n_clicks'),
+        Input('undo-drop-button', 'n_clicks'),
+    ], [
+        State('drop-column-selector', 'value'),
+        State('stored-data', 'data'),
+        State('stored-data-history', 'data'),
+    ]
+)
+def drop_columns(
+        apply_clicks, undo_clicks,
+        selected_columns, data, data_history
+):
+
+    ctx = dash.callback_context
+    if ctx.triggered:
+
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+        if button_id == 'drop-columns-button':
+            df = pd.DataFrame(data)
+            data_history.append(data)  # store the current state in the history
+
+            df = df[selected_columns]  # keep only selected columns
+            return df.to_dict('records'), data_history
+
+        elif button_id == 'undo-drop-button' and data_history:
+            data = data_history.pop()  # remove the last state from the history and use it as the current state
+            return data, data_history
+
+    raise dash.exceptions.PreventUpdate  # prevent update if button hasn't been clicked
+
+
+@app.callback(
+    [
+        Output('stored-data', 'data'),
+    ], [
         Input('apply-button', 'n_clicks'),
-        Input('undo-button', 'n_clicks')],
+        Input('undo-processing-button', 'n_clicks')],
     [
         State('column-selector', 'value'),
-        # State('column-selector-2', 'value'),
         State('processing-selector', 'value'),
         State('stored-data', 'data'),
         State('stored-data-history', 'data'),
         State('stored-column-selector', 'data'),
-        # State('stored-column-selector-2', 'data')
     ]
 )
 def update_or_undo_column_processing(
         apply_clicks,
         undo_clicks,
         selected_column,
-        # selected_column_2,
         processing,
         data,
         data_history,
         stored_column,
-        # stored_column_2
 ):
 
     ctx = dash.callback_context
@@ -394,13 +580,6 @@ def update_or_undo_column_processing(
 
         if selected_column is None and stored_column is not None:
             selected_column = stored_column
-        # elif selected_column is not None:
-        #     dcc.Store(id='stored-column-selector', data=selected_column)
-
-        # if selected_column_2 is None and stored_column_2 is not None:
-        #     selected_column_2 = stored_column_2
-        # elif selected_column_2 is not None:
-        #     dcc.Store(id='stored-column-selector-2', data=selected_column_2)
 
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
@@ -408,94 +587,40 @@ def update_or_undo_column_processing(
             df = pd.DataFrame(data)
             data_history.append(data)  # store the current state in the history
 
-            if processing == 'mean':
-                df[selected_column].fillna(df[selected_column].mean(), inplace=True)
-            elif processing == 'median':
-                df[selected_column].fillna(df[selected_column].median(), inplace=True)
-            elif processing == 'mode':
-                df[selected_column].fillna(df[selected_column].mode()[0], inplace=True)
-            elif processing == 'minmax':
-                min_val = df[selected_column].min()
-                max_val = df[selected_column].max()
-                df[selected_column] = (df[selected_column] - min_val) / (max_val - min_val)
-            elif processing == 'znorm':
-                mean = df[selected_column].mean()
-                std = df[selected_column].std()
-                df[selected_column] = (df[selected_column] - mean) / std
-            elif processing == 'outlier':
-                # Here we cap outliers to the 1st and 99th percentile. You can adjust this as needed.
-                lower = df[selected_column].quantile(0.01)
-                upper = df[selected_column].quantile(0.99)
-                df[selected_column] = np.where(df[selected_column] < lower, lower, df[selected_column])
-                df[selected_column] = np.where(df[selected_column] > upper, upper, df[selected_column])
+            processor = PROCESSING_MAPPER[processing]
+            outputs = processor(df, col=selected_column)
+            if type(outputs) == dict:
+                df = outputs.pop('df')
+            else:
+                df = outputs
 
             return df.to_dict('records'), data_history
 
-        elif button_id == 'undo-button' and data_history:
+        elif button_id == 'undo-processing-button' and data_history:
             data = data_history.pop()  # remove the last state from the history and use it as the current state
             return data, data_history
 
     return data, data_history  # no change if no button was pressed
 
 
+@app.callback(
+    Output('download-link', 'href'),
+    Input('download-button', 'n_clicks'),
+    State('stored-data', 'data'),
+)
+def generate_download_url(n_clicks, stored_data):
+    if n_clicks is None:
+        raise dash.exceptions.PreventUpdate
+
+    # Convert the stored data back to a DataFrame
+    df = pd.DataFrame(stored_data)
+
+    # Convert the DataFrame to a CSV and encode it
+    csv_string = df.to_csv(index=False, encoding='utf-8')
+    csv_data_uri = 'data:text/csv;charset=utf-8,' + urllib.parse.quote(csv_string)
+
+    return csv_data_uri
+
+
 if __name__ == '__main__':
     app.run_server(debug=True)
-
-
-
-
-#
-#
-# # @app.callback(
-# #     [
-# #         Output('output-data-upload', 'children', True),  # The True here indicates multiplexed output
-# #         Output('stored-data', 'data', True),  # The True here indicates multiplexed output
-# #     ], [Input('drop-columns-button', 'n_clicks')],
-# #     [
-# #         State('drop-column-selector', 'value'),
-# #         State('stored-data', 'data')
-# #     ]
-# # )
-# # def drop_columns(n_clicks, selected_columns, data):
-# #     if n_clicks > 0:  # button has been clicked
-# #         df = pd.DataFrame(data)
-# #         df = df[selected_columns]  # keep only selected columns
-# #
-# #         # update table view
-# #         children = dash_table.DataTable(
-# #             data=df.head(1000).to_dict('records'),
-# #             columns=[{'name': i, 'id': i} for i in df.columns],
-# #             fixed_rows={'headers': True},
-# #             style_cell={'width': '150px'},  # adjust as needed
-# #             style_table={'height': '300px', 'overflowY': 'auto'},
-# #             style_header={'textOverflow': 'ellipsis'},
-# #         )
-# #
-# #         return children, df.to_dict('records')
-# #
-# #     raise dash.exceptions.PreventUpdate  # prevent update if button hasn't been clicked
-#
-#
-# @app.callback(
-#     [
-#         Output('stored-data', 'data', True),  # The True here indicates multiplexed output
-#         Output('column-selector', 'options'),  # Update column-selector dropdown options
-#         Output('drop-column-selector', 'options'),  # Update drop-column-selector dropdown options
-#     ],
-#     [Input('drop-columns-button', 'n_clicks')],
-#     [
-#         State('drop-column-selector', 'value'),
-#         State('stored-data', 'data')
-#     ]
-# )
-# def drop_columns(n_clicks, selected_columns, data):
-#     if n_clicks > 0:  # button has been clicked
-#         df = pd.DataFrame(data)
-#         df = df[selected_columns]  # keep only selected columns
-#
-#         # update column-selector and drop-column-selector dropdown options
-#         column_options = [{'label': i, 'value': i} for i in df.columns]
-#
-#         return df.to_dict('records'), column_options, column_options
-#
-#     raise dash.exceptions.PreventUpdate  # prevent update if button hasn't been clicked

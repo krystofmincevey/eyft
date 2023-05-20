@@ -192,6 +192,7 @@ class Transform(object):
         "multiply_all": multiply_all,
         "sum_all": sum_all,
         "divide_by": divide_by,
+        'inverse': inverse,
         "geolocate": geolocate,
     }
 
