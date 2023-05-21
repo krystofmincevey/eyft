@@ -3,7 +3,6 @@ import io
 import sys
 import dash
 import dash_bootstrap_components as dbc
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import urllib
@@ -16,13 +15,13 @@ from dash_extensions.enrich import (
     Input, Output, State,
 )
 
-from ..pipelines.data_processing.processor import (
+from src.eyft.pipelines.data_processing.processor import (
     boxcox_normalise, cap, cap_3std, cat_dummies,
     categorize, floor, floor_and_cap, mean_impute,
     median_impute, min_max_scale, mode_impute,
     segment, z_normalise,
 )
-from ..pipelines.feature_engineering.transform import (
+from src.eyft.pipelines.feature_engineering.transform import (
     log_transform, inverse, multiply_by, divide_by
 )
 
@@ -114,7 +113,8 @@ def table_type(df_column):
 
 
 def create_conditional_style(
-    df: pd.DataFrame, padding: int = 30,
+    df: pd.DataFrame,
+    padding: int = 30,
     pixel_for_char: int = 12,
     max_width_pixels: int = 720  # Maximum width as half the page width (assuming 75% scaling)
 ):
@@ -123,7 +123,7 @@ def create_conditional_style(
         if df[col].dtype == 'object':
             try:
                 df[col] = pd.to_datetime(df[col])
-            except ValueError:
+            except ValueError or TypeError:
                 pass
         col_list = df[col].values.tolist()
         col_list = [s if type(s) is str else str(s) for s in col_list]
@@ -210,8 +210,7 @@ def upload_data(content, name):
     Output('output-data-upload', 'children'),
     [
         Input('stored-data', 'data'),
-    ],
-    [
+    ], [
         State('upload-data', 'filename'),
         State('stored-column-selector', 'data'),
         State('stored-column-selector-2', 'data'),
@@ -371,7 +370,7 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
                                 id='download-link', download='data.csv', href='', target='_blank',
                                 children=[dbc.Button('Download Data', id='download-button', color="danger")]
                             ),
-                            width={'size': 12, 'offset': 4}
+                            width={'size': 6, 'offset': 1}
                         ),
                         justify='center'
                     )
@@ -481,6 +480,7 @@ def update_column_analysis_2(
     data,
 ):
     # Ensure that selected and stored columns are in df
+    df: pd.DataFrame
     if data is not None:
         df = pd.DataFrame(data)
         if selected_column not in df.columns:
@@ -554,6 +554,7 @@ def drop_columns(
 @app.callback(
     [
         Output('stored-data', 'data'),
+        Output('stored-data-history', 'data'),
     ], [
         Input('apply-button', 'n_clicks'),
         Input('undo-processing-button', 'n_clicks')],
@@ -589,10 +590,17 @@ def update_or_undo_column_processing(
 
             processor = PROCESSING_MAPPER[processing]
             outputs = processor(df, col=selected_column)
-            if type(outputs) == dict:
+            if type(outputs) == pd.DataFrame:
+                df = outputs
+            elif type(outputs) == dict:
                 df = outputs.pop('df')
             else:
-                df = outputs
+                raise ValueError(
+                    f'update_or_undo_column_processing got '
+                    f'an unexpected output data type ({type(outputs)}) after '
+                    f'applying the processing function: {PROCESSING_MAPPER[processing]}. '
+                    f'Note that the function supports dict or pd.Dataframe outputs.'
+                )
 
             return df.to_dict('records'), data_history
 

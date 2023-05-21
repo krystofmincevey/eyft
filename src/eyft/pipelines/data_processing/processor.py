@@ -142,7 +142,7 @@ def boxcox_normalise(
     df: pd.DataFrame,
     col: str,
     normaliser: Union[int, float] = None
-) -> pd.DataFrame:
+) -> Dict[str, Union[pd.DataFrame, str, int, float]]:
     """
     Return a dataset transformed by a Box-Cox power transformation.
     Normaliser: used to ensure that all vals are > 0 in df.col.
@@ -161,7 +161,7 @@ def boxcox_normalise(
     logger.info(f'Applying Box-Cox transformation to {col}.')
     tf_vals, _ = stats.boxcox(df[col].values + normaliser)
     df[col] = tf_vals
-    return df
+    return {"df": df, "col": col, "normaliser": normaliser,}
 
 
 def min_max_scale(
