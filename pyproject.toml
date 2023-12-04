@@ -31,6 +31,8 @@ dash-core-components = "^2.0.0"
 dash-html-components = "^2.0.0"
 dash-extensions = "^1.0.0"
 tk = "^0.1.0"
+pandastable = "^0.13.1"
+mplcursors = "^0.5.2"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"

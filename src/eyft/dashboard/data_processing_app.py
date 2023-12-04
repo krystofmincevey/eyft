@@ -4,10 +4,16 @@ import sys
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
+import numpy as np
 import plotly.express as px
+import plotly.graph_objs as go
 import urllib
+import statsmodels as sm
+import datetime as dt
 
 from typing import Union
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.preprocessing import PolynomialFeatures
 
 from dash import dcc, html, dash_table
 from dash_extensions.enrich import (
@@ -42,7 +48,7 @@ PROCESSING_OPTIONS = [
     {'label': 'Segment', 'value': 'segment'},
     {'label': 'Box-Cox Normalize', 'value': 'boxcox_normalise'},
     {'label': 'Log Transform', 'value': 'log'},
-    {'label': 'Log Transform', 'value': 'inverse'},
+    {'label': 'Inverse Transform', 'value': 'inverse'},
     {'label': 'Multiply: Col1 x Col2', 'value': 'multiply_by'},
     {'label': 'Divide: Col1 / Col2', 'value': 'divide_by'},
 ]
@@ -189,6 +195,7 @@ app.layout = html.Div([
 
     dcc.Store(id='stored-column-selector'),
     dcc.Store(id='stored-column-selector-2'),
+    dcc.Store(id='stored-column-selector-3'),
 
 ], style={'margin': '20px'})
 
@@ -214,9 +221,13 @@ def upload_data(content, name):
         State('upload-data', 'filename'),
         State('stored-column-selector', 'data'),
         State('stored-column-selector-2', 'data'),
+        State('stored-column-selector-3', 'data'),
     ]
 )
-def generate_layout(data, file_name, stored_column, stored_column_2):
+def generate_layout(
+        data, file_name, stored_column,
+        stored_column_2, stored_column_3
+):
     if data is not None:
         df = pd.DataFrame(data)
         preview_limit = 1000
@@ -341,6 +352,16 @@ def generate_layout(data, file_name, stored_column, stored_column_2):
                     ),
                     html.Br(),
                     html.Div(id='column-plot-2'),
+                    html.Br(),
+                    html.Div([f'Select 3rd column for multi-variate analysis:']),
+                    dcc.Dropdown(
+                        id='column-selector-3',
+                        options=[{'label': i, 'value': i} for i in df.columns],
+                        value=stored_column_3 if stored_column_3 is not None else None,
+                        placeholder="..."
+                    ),
+                    html.Br(),
+                    html.Div(id='column-plot-3'),
                 ])
             ], className='mb-3'),
 
@@ -482,7 +503,9 @@ def update_column_analysis_2(
     # Ensure that selected and stored columns are in df
     df: pd.DataFrame
     if data is not None:
+
         df = pd.DataFrame(data)
+
         if selected_column not in df.columns:
             selected_column = None
         if stored_column not in df.columns:
@@ -502,14 +525,168 @@ def update_column_analysis_2(
         dcc.Store(id='stored-column-selector-2', data=selected_column_2)
 
     if (selected_column is not None) and (selected_column_2 is not None) and (data is not None):
-        # df = pd.DataFrame(data)
 
-        # Generate scatter plot
-        fig = px.scatter(df, x=selected_column_2, y=selected_column)
+        # Check if selected_column_2 is date
+        is_date = np.issubdtype(df[selected_column_2].dtype, np.datetime64)
+        regression_model = 'logistic' if df[selected_column].nunique() == 2 else 'ols'
+        fig = go.Figure()
+
+        if False:  # TODO - use radiobutton/checkbox to include
+            # TODO: refactor
+            if regression_model == 'ols':
+                # Adding plotly's built-in OLS trendline to scatter plot
+                x = df[selected_column_2].apply(lambda x: x.toordinal()) if is_date else df[selected_column_2]
+                y = df[selected_column]
+                model = sm.OLS(y, sm.add_constant(x)).fit()
+                predictions = model.predict(sm.add_constant(x))
+                fig.add_trace(go.Scatter(x=df[selected_column_2], y=predictions, mode='lines'))
+
+            elif regression_model == 'logistic':
+                # Compute logistic regression
+                X = df[selected_column_2].map(dt.datetime.toordinal).values.reshape(-1, 1) \
+                    if is_date else df[selected_column_2].values.reshape(-1, 1)
+                y = df[selected_column].values
+                clf = LogisticRegression().fit(X, y)
+                # Compute predictions
+                x_range = pd.date_range(df[selected_column_2].min(), df[selected_column_2].max())
+                y_range = clf.predict_proba(x_range.map(dt.datetime.toordinal).values.reshape(-1, 1))[:, 1]
+                # Plot scatter with logistic regression line
+                fig.add_trace(go.Scatter(x=x_range, y=y_range, mode='lines'))
+
+        fig.add_trace(go.Scatter(x=df[selected_column_2], y=df[selected_column], mode='markers'))
+        fig.update_layout(
+            xaxis_title=selected_column_2,
+            yaxis_title=selected_column,
+            # title='Scatter Plot',
+            # template='plotly_dark',
+        )
 
         plot = dcc.Graph(figure=fig)
 
         return plot, selected_column_2
+
+    return None, None
+
+
+@app.callback(
+    [
+        Output('column-plot-3', 'children'),
+        Output('stored-column-selector-3', 'data'),
+    ], [
+        Input('column-selector', 'value'),
+        Input('column-selector-2', 'value'),
+        Input('column-selector-3', 'value'),
+    ], [
+        State('stored-column-selector', 'data'),
+        State('stored-column-selector-2', 'data'),
+        State('stored-column-selector-3', 'data'),
+        State('stored-data', 'data'),
+    ]
+)
+def update_column_analysis_3(
+    selected_column, selected_column_2, selected_column_3,
+    stored_column, stored_column_2, stored_column_3,
+    data,
+):
+    # Ensure that selected and stored columns are in df
+    if data is not None:
+
+        df = pd.DataFrame(data)
+
+        if selected_column not in df.columns:
+            selected_column = None
+        if stored_column not in df.columns:
+            stored_column = None
+        if selected_column_2 not in df.columns:
+            selected_column_2 = None
+        if stored_column_2 not in df.columns:
+            stored_column_2 = None
+        if selected_column_3 not in df.columns:
+            selected_column_3 = None
+        if stored_column_3 not in df.columns:
+            stored_column_3 = None
+
+    # Either use selected or stored cols
+    if selected_column is None and stored_column is not None:
+        selected_column = stored_column
+
+    if selected_column_2 is None and stored_column_2 is not None:
+        selected_column_2 = stored_column_2
+
+    if selected_column_3 is None and stored_column_3 is not None:
+        selected_column_3 = stored_column_3
+    elif selected_column_3 is not None:
+        dcc.Store(id='stored-column-selector-3', data=selected_column_3)
+
+    if (selected_column is not None) and (selected_column_2 is not None) \
+            and (selected_column_3 is not None) and (data is not None):
+
+        # First, create your scatter trace
+        scatter_trace = go.Scatter3d(
+            x=df[selected_column_2],
+            y=df[selected_column_3],
+            z=df[selected_column],
+            mode='markers',
+            marker=dict(
+                size=6,
+                color=df[selected_column],
+                colorscale='Viridis',
+                opacity=0.8
+            )
+        )
+        figure_data = [scatter_trace]
+
+        if False:  # TODO - use radiobutton/checkbox to include
+            # TODO: refactor
+            # Create and fit the models
+            if df[selected_column].nunique() == 2:  # Binary
+                model = LogisticRegression()
+            else:  # Assume continuous
+                model = LinearRegression()
+
+            # Prepare data for model fitting
+            X = df[[selected_column_2, selected_column_3]]
+            y = df[selected_column]
+
+            # Fit the model
+            model.fit(X, y)
+
+            # Create a grid of points on which to evaluate the model
+            x_range = np.linspace(X[selected_column_2].min(), X[selected_column_2].max(), 10)
+            y_range = np.linspace(X[selected_column_3].min(), X[selected_column_3].max(), 10)
+            xx, yy = np.meshgrid(x_range, y_range)
+
+            # Predict z values on the grid
+            zz = model.predict(np.c_[xx.ravel(), yy.ravel()])
+            zz = zz.reshape(xx.shape)
+
+            # Create a surface trace for the regression model
+            surface_trace = go.Surface(x=xx, y=yy, z=zz, colorscale='Viridis', opacity=0.8)
+
+            figure_data.append(surface_trace)
+
+        plot = dcc.Graph(
+            id='3d_scat',
+            figure=go.Figure(
+                data=figure_data,  # Include both traces in the data list
+                layout=go.Layout(
+                    autosize=False,
+                    width=900,
+                    height=800,
+                    margin=dict(l=50, r=50, b=65, t=90),
+                    # title='Scatter 3D Plot',
+                    scene=dict(
+                        xaxis=dict(title=selected_column_2),
+                        yaxis=dict(title=selected_column_3),
+                        zaxis=dict(title=selected_column),
+                        aspectratio=dict(x=1, y=1, z=1),
+                    ),
+                    # template="plotly_dark",
+                )
+            )
+        )
+
+        return plot, selected_column_3
 
     return None, None
 

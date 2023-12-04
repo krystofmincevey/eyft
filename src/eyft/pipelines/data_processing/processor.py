@@ -187,7 +187,8 @@ def min_max_scale(
         logger.info(
             f'Min-Max scale {col} with min: {min_val} and max: {max_val}.'
         )
-        df[col] = (df[col] - min_val) / (max_val - min_val)
+        df[col] -= min_val
+        df[col] /= max_val - min_val
     else:
         logger.warning(
             f"The Min and Max of {col} are equal, hence cannot "
@@ -221,8 +222,12 @@ def cap_3std(
         f'Cap values larger and smaller than 3stdev in {col} |'
         f' mean: {mean} and stdev: {stdev}.'
     )
-    df[col] = np.where(df[col] < mean - 3 * stdev, mean - 3 * stdev, df[col])
-    df[col] = np.where(df[col] > mean + 3 * stdev, mean + 3 * stdev, df[col])
+    df[col] = np.where(
+        df[col] < mean - 3 * stdev, mean - 3 * stdev, df[col]
+    )
+    df[col] = np.where(
+        df[col] > mean + 3 * stdev, mean + 3 * stdev, df[col]
+    )
     return {"df": df, "col": col, "stdev": stdev}
 
 
@@ -458,9 +463,9 @@ class Processor(object):
     }
 
     def __init__(
-            self,
-            df_train: pd.DataFrame,
-            df_test: pd.DataFrame = None,
+        self,
+        df_train: pd.DataFrame,
+        df_test: pd.DataFrame = None,
     ):
         self.df_train = df_train
         self.df_test = df_test
@@ -538,9 +543,13 @@ class Processor(object):
                     f"Processing {col} by applying: {_proc.__name__}"
                 )
 
-                outputs = _proc(df_train, col)
+                outputs = _proc(
+                    df_train.copy(), col
+                )
                 df_train = outputs.pop('df')
                 if df_test is not None:
-                    df_test = _proc(df_test, **outputs)['df']
+                    df_test = _proc(
+                        df_test.copy(), **outputs
+                    )['df']
 
         return df_train, df_test
